@@ -460,8 +460,10 @@ namespace pxsim.visuals {
         public addWire(start: Loc, end: Loc, color: string): Wire {
             const startLoc = this.getLocCoord(start);
             const endLoc = this.getLocCoord(end);
-            if (!startLoc || !endLoc)
+            if (!startLoc || !endLoc) {
+                pxt.debug(`parts: location not found ${start} or ${end}`)
                 return undefined;
+            }
             const startStyle = this.getPinStyle(start);
             const endStyle = this.getPinStyle(end);
             let wireEls: Wire;

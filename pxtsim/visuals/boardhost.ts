@@ -143,8 +143,10 @@ namespace pxsim.visuals {
         }
         private getPinCoord(pin: string) {
             let boardCoord = this.boardViews[0].getCoord(pin);
-            if (!boardCoord) 
+            if (!boardCoord) {
+                console.warn(`parts: not coordinate for ${pin}`)
                 return undefined;
+            }
             return this.fromMBCoord(boardCoord);
         }
         public getLocCoord(loc: Loc): Coord {
