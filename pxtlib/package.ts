@@ -789,27 +789,45 @@ namespace pxt {
                 });
         }
 
+        private processJsonFiles<T>(filename: string, handler: (d: Package, content: T) => void) {
+            this.sortedDeps().forEach(d => {
+                const pjson = d.readFile(filename);
+                if (!pjson) return;
+                try {
+                    const p = JSON.parse(pjson) as T;
+                    handler(d, p);
+                } catch (e) {
+                    pxt.reportError("package", `invalid ${filename} file`);
+                }
+            })
+        }
+
+        computeShieldDefinition(res: pxsim.BoardDefinition): pxsim.BoardDefinition {
+            this.processJsonFiles("pxtshield.json", (d: Package, s: pxsim.BoardDefinition) => {
+                pxt.debug(`importing shield from ${d.id}`)
+                s.parentBoard = res;
+                res = s;
+            })
+            return res;
+        }
+
         computePartDefinitions(parts: string[]): pxt.Map<pxsim.PartDefinition> {
             if (!parts || !parts.length) return {};
 
-            let res: pxt.Map<pxsim.PartDefinition> = {};
-            this.sortedDeps().forEach(d => {
-                let pjson = d.readFile("pxtparts.json");
-                if (pjson) {
-                    try {
-                        let p = JSON.parse(pjson) as pxt.Map<pxsim.PartDefinition>;
-                        for (let k in p) {
-                            if (parts.indexOf(k) >= 0) {
-                                let part = res[k] = p[k];
-                                if (typeof part.visual.image === "string" && /\.svg$/i.test(part.visual.image)) {
-                                    let f = d.readFile(part.visual.image);
-                                    if (!f) pxt.reportError("parts", "invalid part definition", { "error": `missing visual ${part.visual.image}` })
-                                    part.visual.image = `data:image/svg+xml,` + encodeURIComponent(f);
-                                }
+            const res: pxt.Map<pxsim.PartDefinition> = {};
+            this.processJsonFiles("pxtparts.json", (d: Package, p: pxt.Map<pxsim.PartDefinition>) => {
+                for (const k in p) {
+                    if (parts.indexOf(k) >= 0) {
+                        const part = res[k] = p[k];
+                        if (typeof part.visual.image === "string" && /\.svg$/i.test(part.visual.image)) {
+                            const f = d.readFile(part.visual.image);
+                            if (!f) {
+                                pxt.reportError("parts", "invalid part definition", { "error": `missing visual ${part.visual.image}` })
+                                delete res[k];
+                                return;
                             }
+                            part.visual.image = `data:image/svg+xml,` + encodeURIComponent(f);
                         }
-                    } catch (e) {
-                        pxt.reportError("parts", "invalid pxtparts.json file");
                     }
                 }
             })

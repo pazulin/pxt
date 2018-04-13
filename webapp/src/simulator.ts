@@ -194,10 +194,14 @@ export function isDirty(): boolean { // in need of a restart?
 export function run(pkg: pxt.MainPackage, debug: boolean, res: pxtc.CompileResult, mute?: boolean, highContrast?: boolean, light?: boolean) {
     makeClean();
     const js = res.outfiles[pxtc.BINARY_JS]
-    const boardDefinition = pxt.appTarget.simulator.boardDefinition;
-    const parts = pxtc.computeUsedParts(res, true);
+    const sim = pxt.appTarget.simulator;
+    let boardDefinition = sim.boardDefinition;
+    const parts = sim.parts ? pxtc.computeUsedParts(res, true) : [];
     const fnArgs = res.usedArguments;
     lastCompileResult = res;
+
+    if (sim.parts)
+        boardDefinition = pkg.computeShieldDefinition(boardDefinition);
 
     const opts: pxsim.SimulatorRunOptions = {
         boardDefinition: boardDefinition,
@@ -207,8 +211,8 @@ export function run(pkg: pxt.MainPackage, debug: boolean, res: pxtc.CompileResul
         fnArgs,
         highContrast,
         light,
-        aspectRatio: parts.length ? pxt.appTarget.simulator.partsAspectRatio : pxt.appTarget.simulator.aspectRatio,
-        partDefinitions: pkg.computePartDefinitions(parts),
+        aspectRatio: parts.length ? sim.partsAspectRatio : sim.aspectRatio,
+        partDefinitions: parts.length ? pkg.computePartDefinitions(parts) : {},
         cdnUrl: pxt.webConfig.commitCdnUrl,
         localizedStrings: simTranslations,
         refCountingDebug: pxt.options.debug,

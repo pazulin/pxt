@@ -39,8 +39,8 @@ function renderAsync(container: HTMLElement): Promise<HTMLIFrameElement> {
         .then(resp => {
             const p = pkg.mainEditorPkg();
             const name = p.header.name || lf("Untitled");
-            const boardDef = pxt.appTarget.simulator.boardDefinition;
-            const parts = ts.pxtc.computeUsedParts(resp).sort();
+            const boardDef = pkg.mainPkg.computeShieldDefinition(pxt.appTarget.simulator.boardDefinition);
+            const parts = ts.pxtc.computeUsedParts(resp);
             const partDefinitions = pkg.mainPkg.computePartDefinitions(parts);
             const fnArgs = resp.usedArguments;
             let cfg: pxsim.Map<number> = {}
