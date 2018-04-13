@@ -142,8 +142,9 @@ namespace pxsim.visuals {
             return this.fromBBCoord(bbCoord);
         }
         private getPinCoord(pin: string) {
-            let boardCoord = this.boardView.getCoord(pin);
-            U.assert(!!boardCoord, `Unable to find coord for pin: ${pin}`);
+            let boardCoord = this.boardViews[0].getCoord(pin);
+            if (!boardCoord) 
+                return undefined;
             return this.fromMBCoord(boardCoord);
         }
         public getLocCoord(loc: Loc): Coord {
@@ -154,10 +155,6 @@ namespace pxsim.visuals {
             } else {
                 let pinNm = (<BoardLoc>loc).pin;
                 coord = this.getPinCoord(pinNm);
-            }
-            if (!coord) {
-                console.error("Unknown location: " + name)
-                return [0, 0];
             }
             return coord;
         }

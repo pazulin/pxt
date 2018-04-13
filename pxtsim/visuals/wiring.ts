@@ -458,10 +458,12 @@ namespace pxsim.visuals {
         }
 
         public addWire(start: Loc, end: Loc, color: string): Wire {
-            let startLoc = this.getLocCoord(start);
-            let endLoc = this.getLocCoord(end);
-            let startStyle = this.getPinStyle(start);
-            let endStyle = this.getPinStyle(end);
+            const startLoc = this.getLocCoord(start);
+            const endLoc = this.getLocCoord(end);
+            if (!startLoc || !endLoc)
+                return undefined;
+            const startStyle = this.getPinStyle(start);
+            const endStyle = this.getPinStyle(end);
             let wireEls: Wire;
             if (end.type == "dalboard" && endStyle == "croc") {
                 wireEls = this.drawWireWithCrocs(startLoc, endLoc, color);

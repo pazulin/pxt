@@ -403,6 +403,7 @@ namespace pxsim.instructions {
             if (wires) {
                 wires.forEach(w => {
                     let wire = board.addWire(w)
+                    if (!wire) return;
                     //last step
                     if (i === step) {
                         //location highlights
