@@ -123,11 +123,17 @@ namespace pxsim.instructions {
         crocClips?: boolean
     };
 
-    function mkBoardImgSvg(def: string | BoardImageDefinition): visuals.SVGElAndSize {
-        const boardView = pxsim.visuals.mkBoardView({
-            visual: def
-        });
-        return boardView.getView();
+    function mkBoardImgsSvg(def: BoardDefinition): visuals.SVGElAndSize[] {
+        let res: visuals.SVGElAndSize[] = [];
+        while (def) {
+            const boardView = pxsim.visuals.mkBoardView({
+                visual: def.visual
+            });
+            res.push(boardView.getView());
+            def = def.parentBoard;
+        }
+        res.reverse();
+        return res;
     }
 
     function mkBBSvg(): visuals.SVGElAndSize {
@@ -428,9 +434,11 @@ namespace pxsim.instructions {
         let panel = mkPanel();
 
         // board and breadboard
-        let boardImg = mkBoardImgSvg(props.boardDef.visual);
-        let board = wrapSvg(boardImg, { left: QUANT_LBL(1), leftSize: QUANT_LBL_SIZE, cmpScale: PARTS_BOARD_SCALE });
-        panel.appendChild(board);
+        let boardImgs = mkBoardImgsSvg(props.boardDef);
+        boardImgs.forEach(boardImg => {
+            let board = wrapSvg(boardImg, { left: QUANT_LBL(1), leftSize: QUANT_LBL_SIZE, cmpScale: PARTS_BOARD_SCALE });
+            panel.appendChild(board);
+        })
         let bbRaw = mkBBSvg();
         let bb = wrapSvg(bbRaw, { left: QUANT_LBL(1), leftSize: QUANT_LBL_SIZE, cmpScale: PARTS_BB_SCALE });
         panel.appendChild(bb);
