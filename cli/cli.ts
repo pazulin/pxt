@@ -1110,13 +1110,17 @@ function uploadCoreAsync(opts: UploadOptions) {
                         })
                         data = new Buffer((isJs ? targetJsPrefix : '') + JSON.stringify(trg, null, 2), "utf8")
                     } else {
-                        if (trg.simulator
-                            && trg.simulator.boardDefinition
-                            && trg.simulator.boardDefinition.visual) {
-                            let boardDef = trg.simulator.boardDefinition.visual as pxsim.BoardImageDefinition;
-                            if (boardDef.image) {
-                                boardDef.image = uploadArtFile(boardDef.image);
-                                if (boardDef.outlineImage) boardDef.outlineImage = uploadArtFile(boardDef.outlineImage);
+                        if (trg.simulator) {
+                            let bd = trg.simulator.boardDefinition;
+                            while (bd) {
+                                if (bd.visual) {
+                                    let boardDef = bd.visual as pxsim.BoardImageDefinition;
+                                    if (boardDef.image) {
+                                        boardDef.image = uploadArtFile(boardDef.image);
+                                        if (boardDef.outlineImage) boardDef.outlineImage = uploadArtFile(boardDef.outlineImage);
+                                    }
+                                    bd = bd.parentBoard;
+                                }
                             }
                         }
                         // patch icons in bundled packages

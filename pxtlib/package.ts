@@ -431,10 +431,13 @@ namespace pxt {
                         }
                     }
                     let bd = appTarget.simulator.boardDefinition
-                    if (typeof bd.visual == "object") {
-                        let vis = bd.visual as pxsim.BoardImageDefinition
-                        vis.image = expandPkg(vis.image)
-                        vis.outlineImage = expandPkg(vis.outlineImage)
+                    while (bd) {
+                        if (typeof bd.visual == "object") {
+                            let vis = bd.visual as pxsim.BoardImageDefinition
+                            vis.image = expandPkg(vis.image)
+                            vis.outlineImage = expandPkg(vis.outlineImage)
+                        }
+                        bd = bd.parentBoard;
                     }
                 })
             }

@@ -49,7 +49,13 @@ declare namespace pxsim {
             vid: string,
             pid: string,
         };
+        // shield information
+        // reference to board onto which this shield hooks into
+        parentBoard?: BoardDefinition;
+        // typically a shield renders on top of the board, but this is not always true
+        parentOnTop?: boolean;
     }
+
     // ---- part definition
     export interface PartDefinition {
         // built-in simulator logic name

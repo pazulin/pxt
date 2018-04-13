@@ -422,13 +422,17 @@ namespace pxt.BrowserUtils {
         }
 
         const sim = pxt.appTarget.simulator;
-        if (sim
-            && sim.boardDefinition
-            && sim.boardDefinition.visual) {
-            let boardDef = sim.boardDefinition.visual as pxsim.BoardImageDefinition;
-            if (boardDef.image) {
-                boardDef.image = patchCdn(boardDef.image)
-                if (boardDef.outlineImage) boardDef.outlineImage = patchCdn(boardDef.outlineImage)
+        if (sim) {
+            let bd = sim.boardDefinition;
+            while (bd) {
+                if (bd.visual) {
+                    let boardDef = bd.visual as pxsim.BoardImageDefinition;
+                    if (boardDef.image) {
+                        boardDef.image = patchCdn(boardDef.image)
+                        if (boardDef.outlineImage) boardDef.outlineImage = patchCdn(boardDef.outlineImage)
+                    }
+                    bd = bd.parentBoard;
+                }
             }
         }
 
