@@ -473,6 +473,21 @@ namespace pxsim.visuals {
         getPinDist(): number;
         highlightPin(pinNm: string): void;
     }
+    export function combineBoardViews(views: BoardView[]): SVGAndSize<SVGSVGElement> {
+        let res: SVGAndSize<SVGSVGElement> = undefined;
+        // render back first
+        views.reverse().forEach(view => {
+            let v = view.getView();
+            if (!res) {
+                res = v;
+            }
+            else {
+                // include SVG, keep initial size
+                res.el.appendChild(v.el);
+            }
+        })
+        return res;
+    }
 
     //expects rgb from 0,255, gives h in [0,360], s in [0, 100], l in [0, 100]
     export function rgbToHsl(rgb: [number, number, number]): [number, number, number] {

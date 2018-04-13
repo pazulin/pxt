@@ -36,7 +36,7 @@ namespace pxsim.visuals {
         private breadboard: Breadboard;
         private fromBBCoord: (xy: Coord) => Coord;
         private fromMBCoord: (xy: Coord) => Coord;
-        private boardView: BoardView;
+        private boardViews: BoardView[];
         private view: SVGSVGElement;
         private partGroup: SVGGElement;
         private partOverGroup: SVGGElement;
@@ -44,8 +44,8 @@ namespace pxsim.visuals {
         private defs: SVGDefsElement;
         private state: CoreBoard;
 
-        constructor(view: BoardView, opts: BoardHostOpts) {
-            this.boardView = view;
+        constructor(views: BoardView[], opts: BoardHostOpts) {
+            this.boardViews = views;
             this.opts = opts;
             if (!opts.boardDef.pinStyles)
                 opts.boardDef.pinStyles = {};
@@ -59,8 +59,8 @@ namespace pxsim.visuals {
                 });
                 let bMarg = opts.boardDef.marginWhenBreadboarding || [0, 0, 40, 0];
                 let composition = composeSVG({
-                    el1: this.boardView.getView(),
-                    scaleUnit1: this.boardView.getPinDist(),
+                    el1: combineBoardViews(this.boardViews),
+                    scaleUnit1: this.boardViews[0].getPinDist(),
                     el2: this.breadboard.getSVGAndSize(),
                     scaleUnit2: this.breadboard.getPinDist(),
                     margin: [bMarg[0], bMarg[1], 20, bMarg[3]],
@@ -96,7 +96,7 @@ namespace pxsim.visuals {
                 if (!allocRes.requiresBreadboard && !opts.forceBreadboardRender)
                     this.breadboard.hide();
             } else {
-                let el = this.boardView.getView().el;
+                let el = this.boardViews[0].getView().el;
                 this.view = el;
                 this.partGroup = <SVGGElement>svg.child(this.view, "g");
                 this.partOverGroup = <SVGGElement>svg.child(this.view, "g");
@@ -110,7 +110,7 @@ namespace pxsim.visuals {
         }
 
         public highlightBoardPin(pinNm: string) {
-            this.boardView.highlightPin(pinNm);
+            this.boardViews[0].highlightPin(pinNm);
         }
 
         public highlightBreadboardPin(rowCol: BBLoc) {
