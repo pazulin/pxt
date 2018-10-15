@@ -3362,7 +3362,7 @@ function testSnippetsAsync(snippets: CodeSnippet[], re?: string): Promise<void> 
     return Promise.map(snippets, (snippet: CodeSnippet) => {
         const name = snippet.name;
         const fn = snippet.file || snippet.name;
-        pxt.debug(`compiling ${fn} (${snippet.type})`);
+        pxt.log(`compiling ${fn} (${snippet.type})`);
 
         if (snippet.ext == "json") {
             try {
@@ -3390,15 +3390,17 @@ function testSnippetsAsync(snippets: CodeSnippet[], re?: string): Promise<void> 
             opts.ast = true
             let resp = pxtc.compile(opts)
 
-            if (resp.outfiles && snippet.file) {
+            if (snippet.file) {
                 const dir = snippet.file.replace(/\.ts$/, '');
                 nodeutil.mkdirP(dir);
                 nodeutil.mkdirP(path.join(dir, "built"));
-                Object.keys(resp.outfiles).forEach(outfile => {
-                    const ofn = path.join(dir, "built", outfile);
-                    pxt.debug(`writing ${ofn}`);
-                    nodeutil.writeFileSync(ofn, resp.outfiles[outfile], 'utf8')
-                })
+                if (resp.outfiles) {
+                    Object.keys(resp.outfiles).forEach(outfile => {
+                        const ofn = path.join(dir, "built", outfile);
+                        pxt.debug(`writing ${ofn}`);
+                        nodeutil.writeFileSync(ofn, resp.outfiles[outfile], 'utf8')
+                    })
+                }
                 pkg.filesToBePublishedAsync()
                     .then(files => {
                         Object.keys(files).forEach(f => {
@@ -3420,16 +3422,23 @@ function testSnippetsAsync(snippets: CodeSnippet[], re?: string): Promise<void> 
                     })
                     const success = !!bresp.outfiles['main.blocks']
                     if (success) return addSuccess(name)
-                    else return addFailure(fn, bresp.diagnostics)
+                    else {
+                        pxt.log(`snippet: ${snippet.file}`)
+                        return addFailure(fn, bresp.diagnostics)
+                    }
                 }
                 else {
                     return addSuccess(fn)
                 }
             }
             else {
+                pxt.log(`snippet: ${snippet.file || "?"}`)
                 return addFailure(name, resp.diagnostics)
             }
         }).catch((e: Error) => {
+            pxt.log(`test snippet driver error ${e.stack}`)
+            pxt.log(`code: ${snippet.code}`)
+            pxt.log(`packages: ${JSON.stringify(snippet.packages, null, 2)}`)
             addFailure(name, [
                 {
                     code: 4242,
@@ -4570,7 +4579,6 @@ function internalCheckDocsAsync(compileSnippets?: boolean, re?: string, fix?: bo
     let urls: any = {};
     let checked = 0;
     let broken = 0;
-    let snipCount = 0;
     let snippets: CodeSnippet[] = [];
 
     // scan and fix image links

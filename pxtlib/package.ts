@@ -330,8 +330,13 @@ namespace pxt {
         }
 
         private parseConfig(cfgSrc: string, targetVersion?: string) {
-            const cfg = <PackageConfig>JSON.parse(cfgSrc);
-            this.config = cfg;
+            try {
+                const cfg = <PackageConfig>JSON.parse(cfgSrc);
+                this.config = cfg;
+            } catch (e) {
+                pxt.log(`invalid pxt.json: ${cfgSrc}`);
+                throw e;
+            }
 
             const currentConfig = JSON.stringify(this.config);
             for (const dep in this.config.dependencies) {
@@ -399,7 +404,7 @@ namespace pxt {
 
             this.isLoaded = true;
             const str = this.readFile(pxt.CONFIG_NAME);
-            if (str == null) {
+            if (!str) {
                 if (!isInstall)
                     U.userError("Package not installed: " + this.id + ", did you forget to run `pxt install`?")
             } else {
