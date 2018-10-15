@@ -3386,7 +3386,8 @@ function testSnippetsAsync(snippets: CodeSnippet[], re?: string): Promise<void> 
         }
 
         const pkg = new pxt.MainPackage(new SnippetHost("snippet" + name, snippet.code, Object.keys(snippet.packages)));
-        return pkg.getCompileOptionsAsync().then(opts => {
+        return pkg.installAllAsync()
+            .then(() => pkg.getCompileOptionsAsync().then(opts => {
             opts.ast = true
             let resp = pxtc.compile(opts)
 
@@ -3435,7 +3436,7 @@ function testSnippetsAsync(snippets: CodeSnippet[], re?: string): Promise<void> 
                 pxt.log(`snippet: ${snippet.file || "?"}`)
                 return addFailure(name, resp.diagnostics)
             }
-        }).catch((e: Error) => {
+        })).catch((e: Error) => {
             pxt.log(`test snippet driver error ${e.stack}`)
             pxt.log(`code: ${snippet.code}`)
             pxt.log(`packages: ${JSON.stringify(snippet.packages, null, 2)}`)
