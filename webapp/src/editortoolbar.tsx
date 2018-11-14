@@ -104,7 +104,7 @@ export class EditorToolbar extends data.Component<ISettingsProps, {}> {
         const tutorial = tutorialOptions ? tutorialOptions.tutorial : false;
         const simOpts = pxt.appTarget.simulator;
         const headless = simOpts.headless;
-        const collapsed = (hideEditorFloats || collapseEditorTools) && (!tutorial || headless);
+        const collapsed = (hideEditorFloats || collapseEditorTools || sandbox) && (!tutorial || headless);
         const isEditor = this.props.parent.isBlocksEditor() || this.props.parent.isTextEditor();
         if (!isEditor) return <div />;
 

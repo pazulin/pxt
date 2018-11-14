@@ -2468,8 +2468,8 @@ export class ProjectView
         const useSerialEditor = pxt.appTarget.serial && !!pxt.appTarget.serial.useEditor;
 
         const showSideDoc = sideDocs && this.state.sideDocsLoadUrl && !this.state.sideDocsCollapsed;
-        const shouldHideEditorFloats = (this.state.hideEditorFloats || this.state.collapseEditorTools) && (!inTutorial || isHeadless);
-        const shouldCollapseEditorTools = this.state.collapseEditorTools && (!inTutorial || isHeadless);
+        const shouldHideEditorFloats = (this.state.hideEditorFloats || this.state.collapseEditorTools || sandbox) && (!inTutorial || isHeadless);
+        const shouldCollapseEditorTools = (this.state.collapseEditorTools || sandbox) && (!inTutorial || isHeadless);
         const logoWide = !!targetTheme.logoWide;
 
         const isApp = cmds.isNativeHost() || pxt.winrt.isWinRT() || electron.isElectron();
