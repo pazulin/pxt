@@ -41,16 +41,9 @@ namespace pxt.docs.codeCard {
         r.setAttribute("aria-selected", "true");
 
         if (url) (r as HTMLAnchorElement).href = url;
-        if (!options.hideHeader && (card.header || card.blocks || card.javascript || card.hardware || card.software || card.any)) {
+        if (!options.hideHeader && card.header) {
             let h = div(r, "ui content " + (card.responsive ? " tall desktop only" : ""));
-            let hr = div(h, "right floated meta")
-            if (card.any) div(hr, "ui grey circular label tiny", "i", card.any > 0 ? card.any : "");
-            repeat(card.blocks, (k) => div(hr, "puzzle orange icon", "i"));
-            repeat(card.javascript, (k) => div(hr, "align left blue icon", "i"));
-            repeat(card.hardware, (k) => div(hr, "certificate black icon", "i"));
-            repeat(card.software, (k) => div(hr, "square teal icon", "i"));
-
-            if (card.header) div(h, 'description', 'span', card.header);
+            div(h, 'description', 'span', card.header);
         }
 
         const name = (options.shortName ? card.shortName : '') || card.name;
@@ -125,7 +118,7 @@ namespace pxt.docs.codeCard {
             let meta = div(r, "meta");
             if (card.time) {
                 let m = div(meta, "date", "span");
-                m.appendChild(document.createTextNode(pxt.Util.timeSince(card.time)));
+                m.appendChild(document.createTextNode(pxt.docs.timeSince(card.time)));
             }
         }
 

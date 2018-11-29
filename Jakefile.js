@@ -140,6 +140,7 @@ ju.catFiles("built/pxtblockly.js", expand(["webapp/public/blockly/blockly_compre
 compileDir("pxtrunner", ["built/pxtlib.js", "built/pxteditor.js", "built/pxtcompiler.js", "built/pxtsim.js", "built/pxtblockly.js"])
 compileDir("pxtsim", ["built/pxtlib.js"])
 compileDir("pxteditor", ["built/pxtlib.js", "built/pxtblockly.js"])
+compileDir("pxtdocs", ["built/pxtlib.js", "built/pxtrunner.js", , "built/pxtsim.js"])
 compileDir("cli", ["built/pxtlib.js", "built/pxtsim.js", "built/pxtcompiler.js"])
 compileDir("backendutils", ['pxtlib/commonutil.ts', 'pxtlib/docsrender.ts'])
 file("built/web/pxtweb.js", expand(["docfiles/pxtweb"]), { async: true }, function () { tscIn(this, "docfiles/pxtweb", "built") })
@@ -184,6 +185,7 @@ task("lint", [], { async: true }, function () {
         "pxtlib",
         "pxtcompiler",
         "pxtrunner",
+        "pxtdocs",
         "pxtsim",
         "pxtwinrt",
         "webapp",
@@ -301,6 +303,7 @@ file("built/web/pxtlib.js", [
     "built/pxtblockly.js",
     "built/pxtsim.js",
     "built/pxtrunner.js",
+    "built/pxtdocs.js",
     "built/pxteditor.js",
     "built/pxtwinrt.js"
 ], function () {
@@ -315,6 +318,7 @@ file("built/web/pxtlib.js", [
     jake.cpR("built/pxtblockly.js", "built/web/")
     jake.cpR("built/pxtsim.js", "built/web/")
     jake.cpR("built/pxtrunner.js", "built/web/")
+    jake.cpR("built/pxtdocs.js", "built/web/")
     jake.cpR("built/pxteditor.js", "built/web/")
     jake.cpR("built/pxtwinrt.js", "built/web/")
     jake.cpR("external/tdast.js", "built/web/")

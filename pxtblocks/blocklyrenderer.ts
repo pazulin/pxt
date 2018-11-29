@@ -1,28 +1,10 @@
 /// <reference path="../localtypings/pxtblockly.d.ts" />
+/// <reference path="../localtypings/pxtrenderer.d.ts" />
 /// <reference path="../built/pxtlib.d.ts" />
 
 namespace pxt.blocks {
     let workspace: Blockly.Workspace;
     let blocklyDiv: HTMLElement;
-
-    export enum BlockLayout {
-        Align = 1,
-        // Shuffle deprecated
-        Clean = 3,
-        Flow = 4
-    }
-
-    export interface BlocksRenderOptions {
-        emPixels?: number;
-        layout?: BlockLayout;
-        clean?: boolean;
-        aspectRatio?: number;
-        packageId?: string;
-        package?: string;
-        snippetMode?: boolean;
-        useViewWidth?: boolean;
-        splitSvg?: boolean;
-    }
 
     export function render(blocksXml: string, options: BlocksRenderOptions = { emPixels: 18, layout: BlockLayout.Align }): Element {
         if (!workspace) {

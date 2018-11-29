@@ -121,11 +121,6 @@ declare namespace pxt {
         cardType?: "file" | "example" | "codeExample" | "tutorial" | "side" | "template" | "package" | "hw";
 
         header?: string;
-        any?: number;
-        hardware?: number;
-        software?: number;
-        blocks?: number;
-        javascript?: number;
 
         icon?: string;
         iconContent?: string; // Text instead of icon name

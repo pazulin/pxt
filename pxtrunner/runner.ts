@@ -1,5 +1,6 @@
 /* tslint:disable:no-inner-html TODO(tslint): get rid of jquery html() calls */
 
+/// <reference path="../localtypings/pxtrenderer.d.ts" />
 /// <reference path="../built/pxtlib.d.ts" />
 /// <reference path="../built/pxteditor.d.ts" />
 /// <reference path="../built/pxtcompiler.d.ts" />
@@ -390,7 +391,7 @@ namespace pxt.runner {
     export function startRenderServer() {
         pxt.tickEvent("renderer.ready");
 
-        const jobQueue: pxsim.RenderBlocksRequestMessage[] = [];
+        const jobQueue: pxt.runner.RenderBlocksRequestMessage[] = [];
         let jobPromise: Promise<void> = undefined;
 
         function consumeQueue() {
@@ -426,13 +427,13 @@ namespace pxt.runner {
             .done(() => {
                 // notify parent that render engine is loaded
                 window.addEventListener("message", function (ev) {
-                    const msg = ev.data as pxsim.RenderBlocksRequestMessage;
+                    const msg = ev.data as pxt.runner.RenderBlocksRequestMessage;
                     if (msg.type == "renderblocks") {
                         jobQueue.push(msg);
                         consumeQueue();
                     }
                 }, false);
-                window.parent.postMessage(<pxsim.RenderReadyResponseMessage>{
+                window.parent.postMessage(<pxt.runner.RenderReadyResponseMessage>{
                     source: "makecode",
                     type: "renderready"
                 }, "*");

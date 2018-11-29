@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+        "target": "es5",
+        "noImplicitAny": true,
+        "noImplicitReturns": true,
+        "declaration": true,
+        "out": "../built/pxtdocs.js",
+        "newLine": "LF",
+        "sourceMap": false,
+        "lib": ["dom", "dom.iterable", "scripthost", "es6"],
+        "types": ["jquery", "highlight.js", "bluebird"]    }
+}
