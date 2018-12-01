@@ -1,19 +1,12 @@
 namespace pxt.docs.codeCard {
 
-    const repeat = pxt.Util.repeatMap;
-
     export interface CodeCardRenderOptions {
         hideHeader?: boolean;
         shortName?: boolean;
+        blocksXmlRenderAsync?: (xml: string) => Promise<Node>;
     }
 
     export function render(card: pxt.CodeCard, options: CodeCardRenderOptions = {}): HTMLElement {
-        const repeat = pxt.Util.repeatMap;
-        let color = card.color || "";
-        if (!color) {
-            if (card.hardware && !card.software) color = 'black';
-            else if (card.software && !card.hardware) color = 'teal';
-        }
         const url = card.url ? /^[^:]+:\/\//.test(card.url) ? card.url : ('/' + card.url.replace(/^\.?\/?/, ''))
             : undefined;
         const link = !!url;
@@ -56,15 +49,17 @@ namespace pxt.docs.codeCard {
             img.appendChild(lbl);
         }
 
-        if (card.blocksXml) {
-            const svg = pxt.blocks.render(card.blocksXml);
-            if (!svg) {
-                console.error("failed to render blocks");
-                pxt.debug(card.blocksXml);
-            } else {
-                let holder = div(img, ''); holder.setAttribute('style', 'width:100%; min-height:10em');
-                holder.appendChild(svg);
-            }
+        if (card.blocksXml && options.blocksXmlRenderAsync) {
+            options.blocksXmlRenderAsync(card.blocksXml)
+                .then(svg => {
+                    if (!svg) {
+                        console.error("failed to render blocks");
+                        console.debug(card.blocksXml);
+                    } else {
+                        let holder = div(img, ''); holder.setAttribute('style', 'width:100%; min-height:10em');
+                        holder.appendChild(svg);
+                    }
+                });
         }
 
         if (card.typeScript) {
@@ -118,7 +113,7 @@ namespace pxt.docs.codeCard {
             let meta = div(r, "meta");
             if (card.time) {
                 let m = div(meta, "date", "span");
-                m.appendChild(document.createTextNode(pxt.docs.timeSince(card.time)));
+                m.appendChild(document.createTextNode(ts.pxtc.Util.timeSince(card.time)));
             }
         }
 

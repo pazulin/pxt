@@ -7,6 +7,23 @@
         "out": "../built/pxtdocs.js",
         "newLine": "LF",
         "sourceMap": false,
-        "lib": ["dom", "dom.iterable", "scripthost", "es6"],
-        "types": ["jquery", "highlight.js", "bluebird"]    }
+        "lib": [
+            "dom",
+            "dom.iterable",
+            "scripthost",
+            "es6"
+        ],
+        "types": [
+            "jquery",
+            "highlight.js",
+            "bluebird"
+        ]
+    },
+    "include": [
+        "**.ts",
+        "../pxtlib/codecardrender.ts",
+        "../pxtlib/analytics.ts",
+        "../pxtlib/commonutil.ts",
+        "../pxtlib/browserutil.ts"
+    ]
 }

@@ -1,4 +1,4 @@
-/// <reference path="../localtypings/mscc" />
+/// <reference path="../localtypings/mscc.d.ts" />
 
 namespace pxt {
     // These functions are defined in docfiles/pxtweb/cookieCompliance.ts

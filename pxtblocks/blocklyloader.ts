@@ -1,4 +1,5 @@
 /// <reference path="../localtypings/blockly.d.ts" />
+/// <reference path="../localtypings/pxtpackage.d.ts" />
 /// <reference path="../built/pxtlib.d.ts" />
 
 namespace pxt.blocks {
@@ -528,12 +529,12 @@ namespace pxt.blocks {
     }
 
     function mkCard(fn: pxtc.SymbolInfo, blockXml: HTMLElement): pxt.CodeCard {
-        return {
+        return <pxt.CodeCard>{
             name: fn.namespace + '.' + fn.name,
             shortName: fn.name,
             description: fn.attributes.jsDoc,
             url: fn.attributes.help ? 'reference/' + fn.attributes.help.replace(/^\//, '') : undefined,
-            blocksXml: `<xml xmlns="http://www.w3.org/1999/xhtml">${cleanOuterHTML(blockXml)}</xml>`,
+            blocksXml: `<xml xmlns="http://www.w3.org/1999/xhtml">${cleanOuterHTML(blockXml)}</xml>`
         }
     }
 
@@ -2557,10 +2558,6 @@ namespace pxt.blocks {
     function removeBlock(fn: pxtc.SymbolInfo) {
         delete Blockly.Blocks[fn.attributes.blockId];
         delete cachedBlocks[fn.attributes.blockId];
-    }
-
-    function categoryElement(tb: Element, nameid: string): Element {
-        return tb ? getFirstChildWithAttr(tb, "category", "nameid", nameid.toLowerCase()) : undefined;
     }
 
     function collapseSubcategories(cat: Blockly.Toolbox.TreeNode, child?: Blockly.Toolbox.TreeNode) {
