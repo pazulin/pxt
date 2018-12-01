@@ -19,11 +19,12 @@
             "bluebird"
         ]
     },
-    "include": [
-        "**.ts",
-        "../pxtlib/codecardrender.ts",
-        "../pxtlib/analytics.ts",
+    "files": [
         "../pxtlib/commonutil.ts",
-        "../pxtlib/browserutil.ts"
+        "../pxtlib/util.ts",
+        "../pxtlib/browserutils.ts",
+        "../pxtlib/analytics.ts",
+        "../pxtlib/codecardrenderer.ts",
+        "pxtdocs.ts"
     ]
 }

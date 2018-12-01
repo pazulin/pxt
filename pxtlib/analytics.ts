@@ -6,6 +6,49 @@ namespace pxt {
     export declare function aiTrackException(err: any, kind: string, props: any): void;
 }
 
+namespace pxt {
+    export interface PxtOptions {
+        debug?: boolean;
+        light?: boolean; // low resource device
+        wsPort?: number;
+    }
+    export let options: PxtOptions = {};
+
+    // general error reported
+    export let debug: (msg: any) => void = typeof console !== "undefined" && !!console.debug
+        ? (msg) => {
+            if (pxt.options.debug)
+                console.debug(msg);
+        } : () => { };
+    export let log: (msg: any) => void = typeof console !== "undefined" && !!console.log
+        ? (msg) => {
+            console.log(msg);
+        } : () => { };
+
+    export let reportException: (err: any, data?: Map<string>) => void = function (e, d) {
+        if (console) {
+            console.error(e);
+            if (d) {
+                try {
+                    // log it as object, so native object inspector can be used
+                    console.log(d)
+                    //pxt.log(JSON.stringify(d, null, 2))
+                } catch (e) { }
+            }
+        }
+    }
+    export let reportError: (cat: string, msg: string, data?: Map<string>) => void = function (cat, msg, data) {
+        if (console) {
+            console.error(`${cat}: ${msg}`);
+            if (data) {
+                try {
+                    pxt.log(JSON.stringify(data, null, 2))
+                } catch (e) { }
+            }
+        }
+    }
+}
+
 namespace pxt.analytics {
     const defaultProps: Map<string> = {};
     const defaultMeasures: Map<number> = {};
