@@ -3,7 +3,7 @@ namespace pxt.docs.codeCard {
     export interface CodeCardRenderOptions {
         hideHeader?: boolean;
         shortName?: boolean;
-        blocksXmlRenderAsync?: (xml: string) => Promise<Node>;
+        render?: (xml: string, el: Node) => void;
     }
 
     export function render(card: pxt.CodeCard, options: CodeCardRenderOptions = {}): HTMLElement {
@@ -49,18 +49,8 @@ namespace pxt.docs.codeCard {
             img.appendChild(lbl);
         }
 
-        if (card.blocksXml && options.blocksXmlRenderAsync) {
-            options.blocksXmlRenderAsync(card.blocksXml)
-                .then(svg => {
-                    if (!svg) {
-                        console.error("failed to render blocks");
-                        console.debug(card.blocksXml);
-                    } else {
-                        let holder = div(img, ''); holder.setAttribute('style', 'width:100%; min-height:10em');
-                        holder.appendChild(svg);
-                    }
-                });
-        }
+        if (card.blocksXml && options.render)
+            options.render(card.blocksXml, img);
 
         if (card.typeScript) {
             let pre = document.createElement("pre");

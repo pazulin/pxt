@@ -138,37 +138,109 @@ namespace pxt.docs {
         $container.replaceWith(r as any);
     }
 
-    let renderQueue: {
+    const IFRAME_RENDERER_ID = "makecoderenderer5046462824396978"
+    function createRenderer(): HTMLIFrameElement {
+        let f = document.getElementById(IFRAME_RENDERER_ID) as HTMLIFrameElement;
+        if (f) {
+            const ready = !!f.getAttribute("data-ready");
+            if (ready) return f;
+            else return undefined;
+        }
+
+        window.addEventListener("message", handleRendererMessage, false);
+        f = document.createElement("iframe") as HTMLIFrameElement;
+        f.id = IFRAME_RENDERER_ID;
+        f.style.position = "absolute";
+        f.style.left = "0";
+        f.style.bottom = "0";
+        f.style.width = "1px";
+        f.style.height = "1px";
+        // TODO
+        f.src = "/---docs?render=1"
+        document.body.appendChild(f);
+
+        return undefined;
+    }
+
+    interface RenderJob {
         el: JQuery;
         source: string;
+        pending: boolean;
         options: blocks.BlocksRenderOptions;
-        render: (container: JQuery, r: pxt.runner.DecompileResult) => void;
-    }[] = [];
-    function consumeRenderQueueAsync(): Promise<void> {
-        const job = renderQueue.shift();
-        if (!job) return Promise.resolve(); // done
+        render: (container: JQuery, r: pxt.runner.RenderBlocksResponseMessage) => void;
+    }
+    const renderQueue: pxt.Map<RenderJob> = {};
+    function renderJob(job: RenderJob) {
+        let id = job.el.attr("id");
+        console.debug(`queue job ${id}`);
+        renderQueue[id] = job;
+        const f = createRenderer();
+        if (f) {
+            f.contentWindow.postMessage({
+                type: "renderblocks",
+                id: id,
+                code: job.source
+            }, "*");
+        } else {
+            // wait for iframe
+            job.pending = true;
+        }
+    }
+    function consumePendingQueue() {
+        console.debug('consume rendering queue');
+        Object.keys(renderQueue).forEach(id => {
+            const job = renderQueue[id];
+            renderJob(job); // queue again which replaces the job in queue
+        })
+    }
+    function handleRendererMessage(ev: MessageEvent) {
+        const msg = ev.data;
+        if (msg.source != "makecode") return;
+        switch (msg.type) {
+            case "renderready":
+                consumePendingQueue();
+                break;
+            case "renderblocks":
+                const id = msg.id;   // this is the id you sent
+                if (!id) return;
+                const job = renderQueue[id];
+                delete renderQueue[id];
+                if (!job)
+                    console.debug(`job ${id} not found`);
+                else {
+                    console.debug(`job ${id} rendered`);
+                    job.render(job.el, msg as pxt.runner.RenderBlocksResponseMessage);
+                    job.el.removeClass("lang-shadow");
+                    // replace text with svg
+                    //const img = document.createElement("img");
+                    //img.src = msg.uri;
+                    //img.width = msg.width;
+                    //img.height = msg.height;
+                    //const snippet = document.getElementById(id)
+                    //snippet.parentNode.insertBefore(img, snippet)
+                    //snippet.parentNode.removeChild(snippet);
+                }
+                // all done?
+                consumeRenderQueueAsync();
+                break;
+        }
+    }
 
-        const { el, options, render } = job;
-        return pxt.runner.decompileToBlocksAsync(el.text(), options)
-            .then((r) => {
-                const errors = r.compileJS && r.compileJS.diagnostics && r.compileJS.diagnostics.filter(d => d.category == pxtc.DiagnosticCategory.Error);
-                // TODO
-                //if (errors && errors.length)
-                //    errors.forEach(diag => pxt.reportError("docs.decompile", "" + diag.messageText, { "code": diag.code + "" }));
-                render(el, r);
-                el.removeClass("lang-shadow");
-                return consumeRenderQueueAsync();
-            }).catch(e => {
-                // TODO
-                // pxt.reportException(e);
-                el.append($('<div/>').addClass("ui segment warning").text(e.message));
-                el.removeClass("lang-shadow");
-                return consumeRenderQueueAsync();
-            });
+    let consumeRenderQueuePromise: Promise.Resolver<void>;
+    function consumeRenderQueueAsync(): Promise.Resolver<void> {
+        if (!consumeRenderQueuePromise)
+            consumeRenderQueuePromise = Promise.defer();
+        // nothing to do
+        if (!consumeRenderQueuePromise.promise.isResolved()
+            && (!document.getElementById(IFRAME_RENDERER_ID)
+                || !Object.keys(renderQueue).length)) {
+            consumeRenderQueuePromise.resolve();
+        }
+        return consumeRenderQueuePromise;
     }
 
     function renderNextSnippetAsync(cls: string,
-        render: (container: JQuery, r: pxt.runner.DecompileResult) => void,
+        render: (container: JQuery, r: pxt.runner.RenderBlocksResponseMessage) => void,
         options?: pxt.blocks.BlocksRenderOptions): Promise<void> {
         if (!cls) return Promise.resolve();
 
@@ -179,7 +251,10 @@ namespace pxt.docs {
         if (!options.layout) options.layout = pxt.blocks.BlockLayout.Align;
         options.splitSvg = true;
 
-        renderQueue.push({ el: $el, source: $el.text(), options, render });
+        let id = $el.attr("id");
+        if (!id) $el.attr("id", id = Math.random().toString());
+
+        renderJob({ el: $el, pending: false, source: $el.text(), options, render });
         $el.addClass("lang-shadow");
         $el.removeClass(cls);
         return renderNextSnippetAsync(cls, render, options);
@@ -189,7 +264,7 @@ namespace pxt.docs {
         if (options.tutorial) {
             // don't render chrome for tutorials
             return renderNextSnippetAsync(options.snippetClass, (c, r) => {
-                const s = r.blocksSvg;
+                const s = r.svg;
                 if (options.snippetReplaceParent) c = c.parent();
                 const segment = $('<div class="ui segment codewidget"/>').append(s);
                 c.replaceWith(segment);
@@ -263,7 +338,7 @@ namespace pxt.docs {
         if (!opts.blocksXmlClass) return Promise.resolve();
         const cls = opts.blocksXmlClass;
         function renderNextXmlAsync(cls: string,
-            render: (container: JQuery, r: pxt.runner.DecompileResult) => void,
+            render: (container: JQuery, r: pxt.runner.RenderBlocksResponseMessage) => void,
             options?: pxt.blocks.BlocksRenderOptions): Promise<void> {
             let $el = $("." + cls).first();
             if (!$el[0]) return Promise.resolve();
@@ -342,7 +417,7 @@ namespace pxt.docs {
     }
 
     function renderInlineBlocksAsync(options: pxt.blocks.BlocksRenderOptions): Promise<void> {
-        options = Util.clone(options);
+        options = ts.pxtc.Util.clone(options);
         options.emPixels = 18;
         options.snippetMode = true;
 
