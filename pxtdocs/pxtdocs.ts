@@ -260,7 +260,8 @@ namespace pxt.docs {
             let id = $el.attr("id");
             if (!id) $el.attr("id", id = Math.random().toString());
 
-            renderJob({ el: $el, pending: false, source: $el.text(), options, render });
+            const source = $el.text();
+            renderJob({ el: $el, pending: false, source: source, options, render });
             $el.addClass("lang-shadow");
             $el.removeClass(cls);
         })
@@ -671,14 +672,14 @@ namespace pxt.docs {
             $el.removeClass(cls);
             let cards: pxt.CodeCard[];
             try {
-                let js: any = JSON.parse($el.text());
+                const source = $el.text();
+                let js: any = JSON.parse(source);
                 if (!Array.isArray(js)) js = [js];
                 cards = js as pxt.CodeCard[];
             } catch (e) {
                 pxt.reportException(e);
                 $el.append($('<div/>').addClass("ui segment warning").text(e.messageText));
             }
-
             if (options.snippetReplaceParent) $el = $el.parent();
             fillCodeCard($el, cards, { hideHeader: true });
         })

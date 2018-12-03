@@ -3,6 +3,13 @@
 /// <reference path="../built/pxtlib.d.ts" />
 
 namespace pxt.blocks {
+    enum BlockLayout {
+        Align = 1,
+        // Shuffle deprecated
+        Clean = 3,
+        Flow = 4
+    }
+
     let workspace: Blockly.Workspace;
     let blocklyDiv: HTMLElement;
 
