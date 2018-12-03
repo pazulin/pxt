@@ -96,7 +96,7 @@ namespace pxt.analytics {
                 target: pxt.appTarget.id,
                 version: pxt.appTarget.versions.target
             }
-            if (data) Util.jsonMergeFrom(props, data);
+            if (data) ts.pxtc.Util.jsonMergeFrom(props, data);
             pxt.aiTrackException(err, 'exception', props)
         };
 
@@ -113,7 +113,7 @@ namespace pxt.analytics {
                     category: cat,
                     message: msg
                 }
-                if (data) Util.jsonMergeFrom(props, data);
+                if (data) ts.pxtc.Util.jsonMergeFrom(props, data);
                 pxt.aiTrackException(err, 'error', props);
             }
         };

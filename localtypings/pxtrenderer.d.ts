@@ -25,6 +25,13 @@ declare namespace pxt.runner {
         type: "renderready"
     }
 
+    interface RenderCompilationResult {
+        success: boolean;
+        binary?: string; // hex or uf2 file
+        binaryExt?: string; // .hex, .uf2
+        outfiles: pxt.Map<string>;
+    }
+
     interface RenderBlocksResponseMessage {
         source: "makecode",
         type: "renderblocks",
@@ -32,6 +39,9 @@ declare namespace pxt.runner {
         svg?: string;
         width?: number;
         height?: number;
+        compileJS?: RenderCompilationResult;
+        compileBlocks?: RenderCompilationResult;
+        editUrl?: string;
     }
 
     interface RenderBlocksRequestMessage {

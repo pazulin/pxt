@@ -394,6 +394,16 @@ namespace pxt.runner {
         const jobQueue: pxt.runner.RenderBlocksRequestMessage[] = [];
         let jobPromise: Promise<void> = undefined;
 
+        function toCompileResult(c: pxtc.CompileResult): pxt.runner.RenderCompilationResult {
+            if (!c) return c;
+            return {
+                success: c.success,
+                outfiles: c.outfiles,
+                binary: c.outfiles[pxt.outputName()],
+                binaryExt: pxt.outputName().replace(/^.\./, ".")
+            }
+        }
+
         function consumeQueue() {
             if (jobPromise) return; // other worker already in action
             const msg = jobQueue.shift();
@@ -402,13 +412,15 @@ namespace pxt.runner {
             const options = (msg.options || {}) as pxt.blocks.BlocksRenderOptions;
             options.splitSvg = false; // don't split when requesting rendered images
             pxt.tickEvent("renderer.job")
+            let decompileResult: DecompileResult;
             jobPromise = pxt.BrowserUtils.loadBlocklyAsync()
                 .then(() => runner.decompileToBlocksAsync(msg.code, msg.options))
                 .then(result => {
+                    decompileResult = result;
                     const blocksSvg = result.blocksSvg as SVGSVGElement;
                     return blocksSvg ? pxt.blocks.layout.blocklyToSvgAsync(blocksSvg, 0, 0, blocksSvg.viewBox.baseVal.width, blocksSvg.viewBox.baseVal.height) : undefined;
                 }).then(res => {
-                    window.parent.postMessage(<pxsim.RenderBlocksResponseMessage>{
+                    window.parent.postMessage(<pxt.runner.RenderBlocksResponseMessage>{
                         source: "makecode",
                         type: "renderblocks",
                         id: msg.id,
@@ -416,7 +428,9 @@ namespace pxt.runner {
                         height: res ? res.height : undefined,
                         svg: res ? res.svg : undefined,
                         uri: res ? res.xml : undefined,
-                        css: res ? res.css : undefined
+                        css: res ? res.css : undefined,
+                        compileBlocks: toCompileResult(decompileResult.compileBlocks),
+                        compileJS: toCompileResult(decompileResult.compileJS)
                     }, "*");
                     jobPromise = undefined;
                     consumeQueue();

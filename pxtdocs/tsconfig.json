@@ -21,8 +21,6 @@
     },
     "files": [
         "../pxtlib/commonutil.ts",
-        "../pxtlib/util.ts",
-        "../pxtlib/browserutils.ts",
         "../pxtlib/analytics.ts",
         "../pxtlib/codecardrenderer.ts",
         "pxtdocs.ts"

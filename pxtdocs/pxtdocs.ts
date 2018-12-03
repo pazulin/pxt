@@ -54,6 +54,7 @@ namespace pxt.docs {
         $container: JQuery,
         $js: JQuery,
         $svg: JQuery,
+        decompileResult: pxt.runner.RenderBlocksResponseMessage,
         woptions: WidgetOptions = {}
     ) {
         const cdn = pxt.webConfig.commitCdnUrl;
@@ -63,14 +64,21 @@ namespace pxt.docs {
         let $c = $('<div class="ui top attached segment codewidget"></div>');
         let $menu = $h.find('.right.menu');
 
-        /* NOT SUPPORTED.
+        // TODO!
+        if (decompileResult.editUrl) {
+            const $editBtn = $(`<a class="item" role="button" tabindex="0" aria-label="${lf("edit")}"><i role="presentation" aria-hidden="true" class="edit icon"></i></a>`)
+                .attr("href", decompileResult.editUrl);
+            $menu.append($editBtn);
+        }
+        /* TODO
         if (woptions.showEdit && !theme.hideDocsEdit) { // edit button
             const $editBtn = $(`<a class="item" role="button" tabindex="0" aria-label="${lf("edit")}"><i role="presentation" aria-hidden="true" class="edit icon"></i></a>`).click(() => {
                 decompileResult.package.compressToFileAsync(options.showJavaScript ? pxt.JAVASCRIPT_PROJECT_NAME : pxt.BLOCKS_PROJECT_NAME)
-                    .done(buf => window.open(`${getEditUrl(options)}/#project:${ts.pxtc.encodeBase64(Util.uint8ArrayToString(buf))}`, 'pxt'))
+                    .done(buf => window.open(`${getEditUrl(options)}/#project:${ts.pxtc.encodeBase64(ts.pxtc.Util.uint8ArrayToString(buf))}`, 'pxt'))
             })
             $menu.append($editBtn);
-        } */
+        }
+        */
 
         if (options.showJavaScript || !$svg) {
             // blocks
@@ -179,7 +187,8 @@ namespace pxt.docs {
             f.contentWindow.postMessage({
                 type: "renderblocks",
                 id: id,
-                code: job.source
+                code: job.source,
+                options: options
             }, "*");
         } else {
             // wait for iframe
@@ -239,31 +248,31 @@ namespace pxt.docs {
         return consumeRenderQueuePromise;
     }
 
-    function renderNextSnippetAsync(cls: string,
+    function renderNextSnippet(cls: string,
         render: (container: JQuery, r: pxt.runner.RenderBlocksResponseMessage) => void,
-        options?: pxt.blocks.BlocksRenderOptions): Promise<void> {
-        if (!cls) return Promise.resolve();
+        options?: pxt.blocks.BlocksRenderOptions): void {
+        if (!cls) return;
 
-        let $el = $("." + cls).first();
-        if (!$el[0]) return Promise.resolve();
+        const $els = $("." + cls);
+        $els.each(function() {
+            const $el = $(this);
+            if (!options.emPixels) options.emPixels = 18;
+            if (!options.layout) options.layout = pxt.blocks.BlockLayout.Align;
+            options.splitSvg = true;
 
-        if (!options.emPixels) options.emPixels = 18;
-        if (!options.layout) options.layout = pxt.blocks.BlockLayout.Align;
-        options.splitSvg = true;
+            let id = $el.attr("id");
+            if (!id) $el.attr("id", id = Math.random().toString());
 
-        let id = $el.attr("id");
-        if (!id) $el.attr("id", id = Math.random().toString());
-
-        renderJob({ el: $el, pending: false, source: $el.text(), options, render });
-        $el.addClass("lang-shadow");
-        $el.removeClass(cls);
-        return renderNextSnippetAsync(cls, render, options);
+            renderJob({ el: $el, pending: false, source: $el.text(), options, render });
+            $el.addClass("lang-shadow");
+            $el.removeClass(cls);
+        })
     }
 
-    function renderSnippetsAsync(options: ClientRenderOptions): Promise<void> {
+    function renderSnippets(options: ClientRenderOptions): void {
         if (options.tutorial) {
             // don't render chrome for tutorials
-            return renderNextSnippetAsync(options.snippetClass, (c, r) => {
+            renderNextSnippet(options.snippetClass, (c, r) => {
                 const s = r.svg;
                 if (options.snippetReplaceParent) c = c.parent();
                 const segment = $('<div class="ui segment codewidget"/>').append(s);
@@ -272,15 +281,14 @@ namespace pxt.docs {
         }
 
         let snippetCount = 0;
-        return renderNextSnippetAsync(options.snippetClass, (c, r) => {
-            const s = r.compileBlocks && r.compileBlocks.success ? $(r.blocksSvg) : undefined;
+        renderNextSnippet(options.snippetClass, (c, r) => {
+            const s = r.svg ? $(r.svg) : undefined;
             const js = $('<code class="lang-typescript highlight"/>').text(c.text().trim());
             if (options.snippetReplaceParent) c = c.parent();
             const compiled = r.compileJS && r.compileJS.success;
             // TODO should this use pxt.outputName() and not pxtc.BINARY_HEX
-            const hex = options.hex && compiled && r.compileJS.outfiles[pxtc.BINARY_HEX]
-                ? r.compileJS.outfiles[pxtc.BINARY_HEX] : undefined;
-            const hexname = `${appTarget.nickname || appTarget.id}-${options.hexName || ''}-${snippetCount++}.hex`;
+            const hex = compiled && r.compileJS.binary;
+            const hexname = `${appTarget.nickname || appTarget.id}-${options.hexName || ''}-${snippetCount++}${r.binaryExt}`;
             fillWithWidget(options, c, js, s, r, {
                 showEdit: options.showEdit,
                 run: options.simulator && compiled,
@@ -290,22 +298,9 @@ namespace pxt.docs {
         }, { package: options.package, aspectRatio: options.blocksAspectRatio });
     }
 
-    function decompileCallInfo(stmt: ts.Statement): pxtc.CallInfo {
-        if (!stmt || stmt.kind != ts.SyntaxKind.ExpressionStatement)
-            return null;
-
-        let estmt = stmt as ts.ExpressionStatement;
-        if (!estmt.expression || estmt.expression.kind != ts.SyntaxKind.CallExpression)
-            return null;
-
-        let call = estmt.expression as ts.CallExpression;
-        let info = (<any>call).callInfo as pxtc.CallInfo;
-
-        return info;
-    }
-
-    function renderSignaturesAsync(options: ClientRenderOptions): Promise<void> {
-        return renderNextSnippetAsync(options.signatureClass, (c, r) => {
+    function renderSignatures(options: ClientRenderOptions): void {
+        /* TODO
+        renderNextSnippet(options.signatureClass, (c, r) => {
             let cjs = r.compileJS;
             if (!cjs) return;
             let file = r.compileJS.ast.getSourceFile("main.ts");
@@ -323,19 +318,21 @@ namespace pxt.docs {
             if (options.snippetReplaceParent) c = c.parent();
             fillWithWidget(options, c, js, s, r, { showJs: true, hideGutter: true });
         }, { package: options.package, snippetMode: true, aspectRatio: options.blocksAspectRatio });
+        */
     }
 
-    function renderBlocksAsync(options: ClientRenderOptions): Promise<void> {
-        return renderNextSnippetAsync(options.blocksClass, (c, r) => {
-            const s = r.blocksSvg;
+    function renderBlocks(options: ClientRenderOptions): void {
+        renderNextSnippet(options.blocksClass, (c, r) => {
+            const s = r.svg;
             if (options.snippetReplaceParent) c = c.parent();
             const segment = $('<div class="ui segment codewidget"/>').append(s);
             c.replaceWith(segment);
         }, { package: options.package, snippetMode: true, aspectRatio: options.blocksAspectRatio });
     }
 
-    function renderBlocksXmlAsync(opts: ClientRenderOptions): Promise<void> {
-        if (!opts.blocksXmlClass) return Promise.resolve();
+    function renderBlocksXml(opts: ClientRenderOptions): void {
+        /* TODO
+        if (!opts.blocksXmlClass) return;
         const cls = opts.blocksXmlClass;
         function renderNextXmlAsync(cls: string,
             render: (container: JQuery, r: pxt.runner.RenderBlocksResponseMessage) => void,
@@ -359,16 +356,17 @@ namespace pxt.docs {
         }
 
         return renderNextXmlAsync(cls, (c, r) => {
-            const s = r.blocksSvg;
+            const s = r.svg;
             if (opts.snippetReplaceParent) c = c.parent();
             const segment = $('<div class="ui segment codewidget"/>').append(s);
             c.replaceWith(segment);
         }, { package: opts.package, snippetMode: true, aspectRatio: opts.blocksAspectRatio });
+        */
     }
 
-    function renderNamespaces(options: ClientRenderOptions): Promise<void> {
-        if (pxt.appTarget.id == "core") return Promise.resolve();
-
+    function renderNamespaces(options: ClientRenderOptions): void {
+        /* TODO
+        if (pxt.appTarget.id == "core") return;
         return pxt.runner.decompileToBlocksAsync('', options)
             .then((r) => {
                 let res: pxt.Map<string> = {};
@@ -414,9 +412,11 @@ namespace pxt.docs {
                 head.appendChild(nsStyle);
                 nsStyle.appendChild(document.createTextNode(nsStyleBuffer));
             });
+        */
     }
 
-    function renderInlineBlocksAsync(options: pxt.blocks.BlocksRenderOptions): Promise<void> {
+    function renderInlineBlocks(options: pxt.blocks.BlocksRenderOptions): void {
+        /* TODO
         options = ts.pxtc.Util.clone(options);
         options.emPixels = 18;
         options.snippetMode = true;
@@ -461,10 +461,12 @@ namespace pxt.docs {
         }
 
         return renderNextAsync();
+        */
     }
 
-    function renderProjectAsync(options: ClientRenderOptions): Promise<void> {
-        if (!options.projectClass) return Promise.resolve();
+    function renderProjectAsync(options: ClientRenderOptions): void {
+        /* TODO
+        if (!options.projectClass) return;
 
         function render(): Promise<void> {
             let $el = $("." + options.projectClass).first();
@@ -491,10 +493,12 @@ namespace pxt.docs {
         }
 
         return render();
+        */
     }
 
-    function renderLinksAsync(options: ClientRenderOptions, cls: string, replaceParent: boolean, ns: boolean): Promise<void> {
-        return renderNextSnippetAsync(cls, (c, r) => {
+    function renderLinks(options: ClientRenderOptions, cls: string, replaceParent: boolean, ns: boolean): void {
+        /* TODO
+        renderNextSnippet(cls, (c, r) => {
             const cjs = r.compileJS;
             if (!cjs) return;
             const file = r.compileJS.ast.getSourceFile("main.ts");
@@ -624,6 +628,7 @@ namespace pxt.docs {
             if (replaceParent) c = c.parent();
             c.replaceWith(ul)
         }, { package: options.package, aspectRatio: options.blocksAspectRatio })
+        */
     }
 
     function fillCodeCardAsync(c: JQuery, cards: pxt.CodeCard[], options: pxt.docs.codeCard.CodeCardRenderOptions): Promise<void> {
@@ -646,29 +651,14 @@ namespace pxt.docs {
                 cd.appendChild(cardEl)
                 // automitcally display package icon for approved packages
                 if (card.cardType == "package") {
+                    // TODO
+                    /*
+                    // update card info
                     const repoId = pxt.github.parseRepoId((card.url || "").replace(/^\/pkg\//, ''));
-                    if (repoId) {
-                        pxt.packagesConfigAsync()
-                            .then(pkgConfig => {
-                                const status = pxt.github.repoStatus(repoId, pkgConfig);
-                                switch (status) {
-                                    case pxt.github.GitRepoStatus.Banned:
-                                        cardEl.remove(); break;
-                                    case pxt.github.GitRepoStatus.Approved:
-                                        // update card info
-                                        card.imageUrl = pxt.github.mkRepoIconUrl(repoId);
-                                        // inject
-                                        cd.insertBefore(pxt.docs.codeCard.render(card, options), cardEl);
-                                        cardEl.remove();
-                                        break;
-                                }
-                            })
-                            .catch(e => {
-                                // swallow
-                                pxt.reportException(e);
-                                pxt.debug(`failed to load repo ${card.url}`)
-                            })
-                    }
+                    card.imageUrl = pxt.github.mkRepoIconUrl(repoId);
+                    */
+                    // inject
+                    cd.insertBefore(pxt.docs.codeCard.render(card, options), cardEl);
                 }
             });
             c.replaceWith(cd);
@@ -736,7 +726,7 @@ namespace pxt.docs {
                 $(e).text($(e).text().replace(/^\s*\r?\n/, ''))
                 hljs.highlightBlock(e)
             }
-            const opts = pxt.U.clone(woptions);
+            const opts = ts.pxtc.Util.clone(woptions);
             if (ignored) {
                 opts.run = false;
                 opts.showEdit = false;
@@ -798,19 +788,18 @@ namespace pxt.docs {
             });
         }
 
-        renderQueue = [];
         renderTypeScript(options);
-        return Promise.resolve()
-            .then(() => renderNextCodeCardAsync(options.codeCardClass, options))
-            .then(() => renderNamespaces(options))
-            .then(() => renderInlineBlocksAsync(options))
-            .then(() => renderLinksAsync(options, options.linksClass, options.snippetReplaceParent, false))
-            .then(() => renderLinksAsync(options, options.namespacesClass, options.snippetReplaceParent, true))
-            .then(() => renderSignaturesAsync(options))
-            .then(() => renderSnippetsAsync(options))
-            .then(() => renderBlocksAsync(options))
-            .then(() => renderBlocksXmlAsync(options))
-            .then(() => renderProjectAsync(options))
-            .then(() => consumeRenderQueueAsync())
+        renderNextCodeCardAsync(options.codeCardClass, options)
+        renderNamespaces(options);
+        renderInlineBlocks(options);
+        renderLinks(options, options.linksClass, options.snippetReplaceParent, false);
+        renderLinks(options, options.namespacesClass, options.snippetReplaceParent, true);
+        renderSignatures(options);
+        renderSnippets(options);
+        renderBlocks(options);
+        renderBlocksXml(options);
+        renderProjectAsync(options);
+
+        return consumeRenderQueueAsync().promise;
     }
 }

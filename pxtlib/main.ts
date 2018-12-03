@@ -283,12 +283,6 @@ namespace pxt {
         return targetConfigAsync().then(config => config ? config.packages : undefined);
     }
 
-    export const CONFIG_NAME = "pxt.json"
-    export const SERIAL_EDITOR_FILE = "serial.txt"
-    export const CLOUD_ID = "pxt/"
-    export const BLOCKS_PROJECT_NAME = "blocksprj";
-    export const JAVASCRIPT_PROJECT_NAME = "tsprj";
-
     export function outputName(trg: CompileTarget = null) {
         if (!trg) trg = appTarget.compile
         if (trg.useUF2)
