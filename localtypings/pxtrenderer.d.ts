@@ -31,10 +31,31 @@ declare namespace pxt.runner {
         outfiles: pxt.Map<string>;
     }
 
-    interface RenderBlocksResponseMessage {
+    interface RenderMessage {
+        id: string;
+        type: string;
+    }
+
+    interface RenderRequest extends RenderMessage {
+        code?: string;
+        options?: {
+            packageId?: string;
+            package?: string;
+            snippetMode?: boolean;
+        }
+    }
+
+    interface RenderResponse extends RenderMessage {
+        editUrl?: string;
+    }
+
+    interface RenderBlocksRequest extends RenderRequest {
+        type: "renderblocks",
+    }
+
+    interface RenderBlocksResponse extends RenderResponse {
         source: "makecode",
         type: "renderblocks",
-        id: string;
         svg?: string;
         width?: number;
         height?: number;
@@ -43,14 +64,15 @@ declare namespace pxt.runner {
         editUrl?: string;
     }
 
-    interface RenderBlocksRequestMessage {
-        type: "renderblocks",
-        id: string;
-        code?: string;
-        options?: {
-            packageId?: string;
-            package?: string;
-            snippetMode?: boolean;
-        }
+    interface RenderSignatureRequest extends RenderRequest {
+        type: "rendersig";
+    }
+
+    interface RenderSignatureResponse extends RenderResponse {
+        type: "rendersig";
+        svg?: string;
+        width?: number;
+        height?: number;
+        js?: string;
     }
 }

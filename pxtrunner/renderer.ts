@@ -226,6 +226,27 @@ namespace pxt.runner {
         return info;
     }
 
+    export function fillSignatureResponseAsync(req: pxt.runner.RenderSignatureRequest, r: DecompileResult, resp: pxt.runner.RenderSignatureResponse): Promise< {
+        let cjs = r.compileJS;
+        if (!cjs) return;
+        let file = r.compileJS.ast.getSourceFile("main.ts");
+        let info = decompileCallInfo(file.statements[0]);
+        if (!info || !r.apiInfo) return;
+        const symbolInfo = r.apiInfo.byQName[info.qName];
+        if (!symbolInfo) return;
+        let block = Blockly.Blocks[symbolInfo.attributes.blockId];
+        let xml = block && block.codeCard ? block.codeCard.blocksXml : undefined;
+
+        const s = xml ? pxt.blocks.render(xml) : r.compileBlocks && r.compileBlocks.success ? r.blocksSvg : undefined;
+        let sig = info.decl.getText().replace(/^export/, '');
+        sig = sig.slice(0, sig.indexOf('{')).trim() + ';';
+
+        return (blocksSvg ? pxt.blocks.layout.blocklyToSvgAsync(blocksSvg, 0, 0, blocksSvg.viewBox.baseVal.width, blocksSvg.viewBox.baseVal.height) : Promise.resolve(undefined))
+
+        resp.svg = s ?;
+        resp.js = sig;
+    }
+
     function renderSignaturesAsync(options: ClientRenderOptions): Promise<void> {
         return renderNextSnippetAsync(options.signatureClass, (c, r) => {
             let cjs = r.compileJS;

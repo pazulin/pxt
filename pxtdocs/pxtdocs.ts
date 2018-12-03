@@ -54,7 +54,7 @@ namespace pxt.docs {
         $container: JQuery,
         $js: JQuery,
         $svg: JQuery,
-        res: pxt.runner.RenderBlocksResponseMessage,
+        res: pxt.runner.RenderResponse,
         woptions: WidgetOptions = {}
     ) {
         let $h = $('<div class="ui bottom attached tabular icon small compact menu hideprint">'
@@ -177,27 +177,29 @@ namespace pxt.docs {
 
     interface RenderJob {
         el: JQuery;
+        type: string;
         source: string;
         pending: boolean;
         options: blocks.BlocksRenderOptions;
-        render: (container: JQuery, r: pxt.runner.RenderBlocksResponseMessage) => void;
+        render: (container: JQuery, r: pxt.runner.RenderBlocksResponse) => void;
     }
     const renderQueue: pxt.Map<RenderJob> = {};
-    function renderJob(job: RenderJob) {
+    function queueRenderJob(job: RenderJob) {
         let id = job.el.attr("id");
-        console.debug(`queue job ${id}`);
+        console.debug(`queue job ${job.type} ${id}`);
+        console.debug(job);
         renderQueue[id] = job;
         const f = createRenderer();
         if (f) {
             f.contentWindow.postMessage({
-                type: "renderblocks",
+                type: job.type,
                 id: id,
                 code: job.source,
                 options: options
             }, "*");
         } else {
             // wait for iframe
-            console.debug(`job ${id} pending`);
+            console.debug(`job ${job.type} ${id} pending`);
             job.pending = true;
         }
     }
@@ -207,9 +209,21 @@ namespace pxt.docs {
         f.setAttribute("data-ready", "true");
         Object.keys(renderQueue).forEach(id => {
             const job = renderQueue[id];
-            renderJob(job); // queue again which replaces the job in queue
+            queueRenderJob(job); // queue again which replaces the job in queue
         })
     }
+
+    function popJob(id: string): RenderJob {
+        if (!id) return undefined;
+        const job = renderQueue[id];
+        delete renderQueue[id];
+        if (!job)
+            console.debug(`job ${job.type} ${id} not found`);
+        else
+            console.debug(`job ${job.type} ${id} rendering`);
+        return job;
+    }
+
     function handleRendererMessage(ev: MessageEvent) {
         const msg = ev.data;
         if (msg.source != "makecode") return;
@@ -218,27 +232,11 @@ namespace pxt.docs {
                 consumePendingQueue();
                 break;
             case "renderblocks":
-                const id = msg.id;   // this is the id you sent
-                if (!id) return;
-                const job = renderQueue[id];
-                delete renderQueue[id];
-                if (!job)
-                    console.debug(`job ${id} not found`);
-                else {
-                    console.debug(`job ${id} rendered`);
-                    job.render(job.el, msg as pxt.runner.RenderBlocksResponseMessage);
+                const job = popJob(msg.id);
+                if (job) {
+                    job.render(job.el, msg as pxt.runner.RenderBlocksResponse);
                     job.el.removeClass("lang-shadow");
-                    // replace text with svg
-                    //const img = document.createElement("img");
-                    //img.src = msg.uri;
-                    //img.width = msg.width;
-                    //img.height = msg.height;
-                    //const snippet = document.getElementById(id)
-                    //snippet.parentNode.insertBefore(img, snippet)
-                    //snippet.parentNode.removeChild(snippet);
                 }
-                // all done?
-                consumeRenderQueue();
                 break;
         }
     }
@@ -247,8 +245,10 @@ namespace pxt.docs {
         // nothing to do
     }
 
-    function renderNextSnippet(cls: string,
-        render: (container: JQuery, r: pxt.runner.RenderBlocksResponseMessage) => void,
+    function renderNextSnippet(
+        cls: string,
+        type: string,
+        render: (container: JQuery, r: pxt.runner.RenderResponse) => void,
         options?: pxt.blocks.BlocksRenderOptions): void {
         if (!cls) return;
 
@@ -261,7 +261,7 @@ namespace pxt.docs {
             if (!id) $el.attr("id", id = Math.random().toString());
 
             const source = $el.text();
-            renderJob({ el: $el, pending: false, source: source, options, render });
+            queueRenderJob({ el: $el, pending: false, type: type, source: source, options, render });
             $el.addClass("lang-shadow");
             $el.removeClass(cls);
         })
@@ -270,7 +270,7 @@ namespace pxt.docs {
     function renderSnippets(options: ClientRenderOptions): void {
         if (options.tutorial) {
             // don't render chrome for tutorials
-            renderNextSnippet(options.snippetClass, (c, r) => {
+            renderNextSnippet(options.snippetClass, "renderblocks", (c, r: pxt.runner.RenderBlocksResponse) => {
                 const s = r.svg;
                 if (options.snippetReplaceParent) c = c.parent();
                 const segment = $('<div class="ui segment codewidget"/>').append(s);
@@ -279,7 +279,7 @@ namespace pxt.docs {
         }
 
         let snippetCount = 0;
-        renderNextSnippet(options.snippetClass, (c, r) => {
+        renderNextSnippet(options.snippetClass, "renderblocks", (c, r: pxt.runner.RenderBlocksResponse) => {
             const s = r.svg ? $(r.svg) : undefined;
             const js = $('<code class="lang-typescript highlight"/>').text(c.text().trim());
             if (options.snippetReplaceParent) c = c.parent();
@@ -297,30 +297,16 @@ namespace pxt.docs {
     }
 
     function renderSignatures(options: ClientRenderOptions): void {
-        /* TODO
-        renderNextSnippet(options.signatureClass, (c, r) => {
-            let cjs = r.compileJS;
-            if (!cjs) return;
-            let file = r.compileJS.ast.getSourceFile("main.ts");
-            let info = decompileCallInfo(file.statements[0]);
-            if (!info || !r.apiInfo) return;
-            const symbolInfo = r.apiInfo.byQName[info.qName];
-            if (!symbolInfo) return;
-            let block = Blockly.Blocks[symbolInfo.attributes.blockId];
-            let xml = block && block.codeCard ? block.codeCard.blocksXml : undefined;
-
-            const s = xml ? $(pxt.blocks.render(xml)) : r.compileBlocks && r.compileBlocks.success ? $(r.blocksSvg) : undefined;
-            let sig = info.decl.getText().replace(/^export/, '');
-            sig = sig.slice(0, sig.indexOf('{')).trim() + ';';
-            let js = $('<code class="lang-typescript highlight"/>').text(sig);
+        renderNextSnippet(options.signatureClass, "rendersig", (c, r: pxt.runner.RenderSignatureResponse) => {
+            const s = r.svg ? $(r.svg) : undefined;
+            const js = $('<code class="lang-typescript highlight"/>').text(r.js);
             if (options.snippetReplaceParent) c = c.parent();
             fillWithWidget(options, c, js, s, r, { showJs: true, hideGutter: true });
         }, { package: options.package, snippetMode: true, aspectRatio: options.blocksAspectRatio });
-        */
     }
 
     function renderBlocks(options: ClientRenderOptions): void {
-        renderNextSnippet(options.blocksClass, (c, r) => {
+        renderNextSnippet(options.blocksClass, "renderblocks", (c, r: pxt.runner.RenderBlocksResponse) => {
             const s = r.svg;
             if (options.snippetReplaceParent) c = c.parent();
             const segment = $('<div class="ui segment codewidget"/>').append(s);
@@ -363,54 +349,53 @@ namespace pxt.docs {
     }
 
     function renderNamespaces(options: ClientRenderOptions): void {
-        /* TODO
-        if (pxt.appTarget.id == "core") return;
-        return pxt.runner.decompileToBlocksAsync('', options)
-            .then((r) => {
-                let res: pxt.Map<string> = {};
-                const info = r.compileBlocks.blocksInfo;
-                info.blocks.forEach(fn => {
-                    const ns = (fn.attributes.blockNamespace || fn.namespace).split('.')[0];
-                    if (!res[ns]) {
-                        const nsn = info.apis.byQName[ns];
-                        if (nsn && nsn.attributes.color)
-                            res[ns] = nsn.attributes.color;
-                    }
-                });
-                let nsStyleBuffer = '';
-                Object.keys(res).forEach(ns => {
-                    const color = res[ns] || '#dddddd';
-                    nsStyleBuffer += `
-                        span.docs.${ns.toLowerCase()} {
-                            background-color: ${color} !important;
-                            border-color: ${pxt.toolbox.fadeColor(color, 0.1, false)} !important;
-                        }
-                    `;
-                })
-                return nsStyleBuffer;
-            })
-            .then((nsStyleBuffer) => {
-                Object.keys(pxt.toolbox.blockColors).forEach((ns) => {
-                    const color = pxt.toolbox.getNamespaceColor(ns);
-                    nsStyleBuffer += `
-                        span.docs.${ns.toLowerCase()} {
-                            background-color: ${color} !important;
-                            border-color: ${pxt.toolbox.fadeColor(color, 0.1, false)} !important;
-                        }
-                    `;
-                })
-                return nsStyleBuffer;
-            })
-            .then((nsStyleBuffer) => {
-                // Inject css
-                let nsStyle = document.createElement('style');
-                nsStyle.id = "namespaceColors";
-                nsStyle.type = 'text/css';
-                let head = document.head || document.getElementsByTagName('head')[0];
-                head.appendChild(nsStyle);
-                nsStyle.appendChild(document.createTextNode(nsStyleBuffer));
-            });
-        */
+        /*
+                return pxt.runner.decompileToBlocksAsync('', options)
+                    .then((r) => {
+                        let res: pxt.Map<string> = {};
+                        const info = r.compileBlocks.blocksInfo;
+                        info.blocks.forEach(fn => {
+                            const ns = (fn.attributes.blockNamespace || fn.namespace).split('.')[0];
+                            if (!res[ns]) {
+                                const nsn = info.apis.byQName[ns];
+                                if (nsn && nsn.attributes.color)
+                                    res[ns] = nsn.attributes.color;
+                            }
+                        });
+                        let nsStyleBuffer = '';
+                        Object.keys(res).forEach(ns => {
+                            const color = res[ns] || '#dddddd';
+                            nsStyleBuffer += `
+                                span.docs.${ns.toLowerCase()} {
+                                    background-color: ${color} !important;
+                                    border-color: ${pxt.toolbox.fadeColor(color, 0.1, false)} !important;
+                                }
+                            `;
+                        })
+                        return nsStyleBuffer;
+                    })
+                    .then((nsStyleBuffer) => {
+                        Object.keys(pxt.toolbox.blockColors).forEach((ns) => {
+                            const color = pxt.toolbox.getNamespaceColor(ns);
+                            nsStyleBuffer += `
+                                span.docs.${ns.toLowerCase()} {
+                                    background-color: ${color} !important;
+                                    border-color: ${pxt.toolbox.fadeColor(color, 0.1, false)} !important;
+                                }
+                            `;
+                        })
+                        return nsStyleBuffer;
+                    })
+                    .then((nsStyleBuffer) => {
+                        // Inject css
+                        let nsStyle = document.createElement('style');
+                        nsStyle.id = "namespaceColors";
+                        nsStyle.type = 'text/css';
+                        let head = document.head || document.getElementsByTagName('head')[0];
+                        head.appendChild(nsStyle);
+                        nsStyle.appendChild(document.createTextNode(nsStyleBuffer));
+                    });
+                */
     }
 
     function renderInlineBlocks(options: pxt.blocks.BlocksRenderOptions): void {

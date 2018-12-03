@@ -391,7 +391,7 @@ namespace pxt.runner {
     export function startRenderServer() {
         pxt.tickEvent("renderer.ready");
 
-        const jobQueue: pxt.runner.RenderBlocksRequestMessage[] = [];
+        const jobQueue: pxt.runner.RenderRequest[] = [];
         let jobPromise: Promise<void> = undefined;
 
         function toCompileResult(c: pxtc.CompileResult): pxt.runner.RenderCompilationResult {
@@ -416,21 +416,41 @@ namespace pxt.runner {
                 .then(() => runner.decompileToBlocksAsync(msg.code, msg.options))
                 .then(result => {
                     decompileResult = result;
-                    const blocksSvg = result.blocksSvg as SVGSVGElement;
-                    return blocksSvg ? pxt.blocks.layout.blocklyToSvgAsync(blocksSvg, 0, 0, blocksSvg.viewBox.baseVal.width, blocksSvg.viewBox.baseVal.height) : undefined;
-                }).then(res => {
-                    window.parent.postMessage(<pxt.runner.RenderBlocksResponseMessage>{
-                        source: "makecode",
-                        type: "renderblocks",
-                        id: msg.id,
-                        width: res ? res.width : undefined,
-                        height: res ? res.height : undefined,
-                        svg: res ? res.svg : undefined,
-                        uri: res ? res.xml : undefined,
-                        css: res ? res.css : undefined,
-                        compileBlocks: toCompileResult(decompileResult.compileBlocks),
-                        compileJS: toCompileResult(decompileResult.compileJS)
-                    }, "*");
+                    switch (msg.type) {
+                        case "rendersig":
+                            window.parent.postMessage(<pxt.runner.RenderResponse>{
+                                source: "makecode",
+                                type: msg.type,
+                                id: msg.id,
+                                width: res ? res.width : undefined,
+                                height: res ? res.height : undefined,
+                                svg: res ? res.svg : undefined,
+                                uri: res ? res.xml : undefined,
+                                css: res ? res.css : undefined,
+                                compileBlocks: toCompileResult(decompileResult.compileBlocks),
+                                compileJS: toCompileResult(decompileResult.compileJS)
+                            }, "*");
+                            break;
+                        default:
+                            const blocksSvg = result.blocksSvg as SVGSVGElement;
+                            return (blocksSvg ? pxt.blocks.layout.blocklyToSvgAsync(blocksSvg, 0, 0, blocksSvg.viewBox.baseVal.width, blocksSvg.viewBox.baseVal.height) : Promise.resolve(undefined))
+                                .then(res => {
+                                    window.parent.postMessage(<pxt.runner.RenderResponse>{
+                                        source: "makecode",
+                                        type: msg.type,
+                                        id: msg.id,
+                                        width: res ? res.width : undefined,
+                                        height: res ? res.height : undefined,
+                                        svg: res ? res.svg : undefined,
+                                        uri: res ? res.xml : undefined,
+                                        css: res ? res.css : undefined,
+                                        compileBlocks: toCompileResult(decompileResult.compileBlocks),
+                                        compileJS: toCompileResult(decompileResult.compileJS)
+                                    }, "*");
+                                })
+                            break;
+                    }
+                }).then(() => {
                     jobPromise = undefined;
                     consumeQueue();
                 })
@@ -440,7 +460,7 @@ namespace pxt.runner {
             .done(() => {
                 // notify parent that render engine is loaded
                 window.addEventListener("message", function (ev) {
-                    const msg = ev.data as pxt.runner.RenderBlocksRequestMessage;
+                    const msg = ev.data as pxt.runner.RenderBlocksRequest;
                     if (msg.type == "renderblocks") {
                         jobQueue.push(msg);
                         consumeQueue();
