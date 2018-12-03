@@ -14,9 +14,7 @@
             "es6"
         ],
         "types": [
-            "jquery",
-            "highlight.js",
-            "bluebird"
+            "jquery"
         ]
     },
     "files": [

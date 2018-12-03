@@ -59,10 +59,6 @@ export class CodeCardView extends data.Component<pxt.CodeCard, CodeCardState> {
     renderCore() {
         const card = this.props
         let color = card.color || "";
-        if (!color) {
-            if (card.hardware && !card.software) color = 'black';
-            else if (card.software && !card.hardware) color = 'teal';
-        }
         const renderMd = (md: string) => md.replace(/`/g, '');
         const url = card.url ? /^[^:]+:\/\//.test(card.url) ? card.url : ('/' + card.url.replace(/^\.?\/?/, ''))
             : undefined;
@@ -82,15 +78,8 @@ export class CodeCardView extends data.Component<pxt.CodeCard, CodeCardState> {
         const cardDiv = <div className={`ui card ${color} ${card.onClick ? "link" : ''} ${className ? className : ''}`}
             role={card.role} aria-selected={card.role === "option" ? "true" : undefined} aria-label={card.ariaLabel || card.title} title={card.title}
             onClick={clickHandler} tabIndex={card.onClick ? card.tabIndex || 0 : null} onKeyDown={card.onClick ? sui.fireClickOnEnter : null}>
-            {card.header || card.blocks || card.javascript || card.hardware || card.software || card.any ?
+            {card.header ?
                 <div key="header" className={"ui content " + (card.responsive ? " tall desktop only" : "")}>
-                    <div className="right floated meta">
-                        {card.any ? (<sui.Icon key="costany" icon="ui grey circular label tiny">{card.any > 0 ? card.any : null} </sui.Icon>) : null}
-                        {repeat(card.blocks, (k) => <sui.Icon key={"costblocks" + k} icon="puzzle orange" />)}
-                        {repeat(card.javascript, (k) => <sui.Icon key={"costjs" + k} icon="align left blue" />)}
-                        {repeat(card.hardware, (k) => <sui.Icon key={"costhardware" + k} icon="certificate black" />)}
-                        {repeat(card.software, (k) => <sui.Icon key={"costsoftware" + k} icon="square teal" />)}
-                    </div>
                     {card.header}
                 </div> : null}
             {card.label || card.labelIcon || card.blocksXml || card.typeScript || imageUrl || cardType == "file" ? <div className={"ui image"}>

@@ -1,5 +1,4 @@
 /* tslint:disable:no-jquery-raw-elements TODO(tslint): get rid of jquery html() calls */
-/// <reference path="../localtypings/pxtwebconfig.d.ts" />
 /// <reference path="../localtypings/pxtarget.d.ts"/>
 /// <reference path="../localtypings/pxtrenderer.d.ts" />
 
@@ -43,10 +42,11 @@ namespace pxt.docs {
 
     function appendJs($parent: JQuery, $js: JQuery, woptions: WidgetOptions) {
         $parent.append($('<div class="ui content js"/>').append($js));
-        if (typeof hljs !== "undefined")
-            $js.find('code.highlight').each(function (i, block) {
-                hljs.highlightBlock(block);
-            });
+        // todo
+        //if (typeof hljs !== "undefined")
+        //    $js.find('code.highlight').each(function (i, block) {
+        //        hljs.highlightBlock(block);
+        //    });
     }
 
     function fillWithWidget(
@@ -54,20 +54,18 @@ namespace pxt.docs {
         $container: JQuery,
         $js: JQuery,
         $svg: JQuery,
-        decompileResult: pxt.runner.RenderBlocksResponseMessage,
+        res: pxt.runner.RenderBlocksResponseMessage,
         woptions: WidgetOptions = {}
     ) {
-        const cdn = pxt.webConfig.commitCdnUrl;
-        const theme = pxt.appTarget.appTheme || {};
         let $h = $('<div class="ui bottom attached tabular icon small compact menu hideprint">'
             + ' <div class="right icon menu"></div></div>');
         let $c = $('<div class="ui top attached segment codewidget"></div>');
         let $menu = $h.find('.right.menu');
 
         // TODO!
-        if (decompileResult.editUrl) {
+        if (res && res.editUrl) {
             const $editBtn = $(`<a class="item" role="button" tabindex="0" aria-label="${lf("edit")}"><i role="presentation" aria-hidden="true" class="edit icon"></i></a>`)
-                .attr("href", decompileResult.editUrl);
+                .attr("href", res.editUrl);
             $menu.append($editBtn);
         }
         /* TODO
@@ -117,6 +115,8 @@ namespace pxt.docs {
         }
 
         // runner menu
+        // TODO
+        /*
         if (woptions.run && !theme.hideDocsSimulator) {
             let $runBtn = $(`<a class="item" role="button" tabindex="0" aria-label="${lf("run")}"><i role="presentation" aria-hidden="true" class="play icon"></i></a>`).click(() => {
                 if ($c.find('.sim')[0])
@@ -130,13 +130,17 @@ namespace pxt.docs {
             })
             $menu.append($runBtn);
         }
+        */
 
+        // TODO
+        /*
         if (woptions.hexname && woptions.hex) {
             let $hexBtn = $(`<a class="item" role="button" tabindex="0" aria-label="${lf("download")}"><i role="presentation" aria-hidden="true" class="download icon"></i></a>`).click(() => {
                 pxt.BrowserUtils.browserDownloadBinText(woptions.hex, woptions.hexname, pxt.appTarget.compile.hexMimeType);
             })
             $menu.append($hexBtn);
         }
+        */
 
         let r = [$c];
         // don't add menu if empty
@@ -146,7 +150,7 @@ namespace pxt.docs {
         $container.replaceWith(r as any);
     }
 
-    const IFRAME_RENDERER_ID = "makecoderenderer5046462824396978"
+    const IFRAME_RENDERER_ID = "makecoderenderer"
     function createRenderer(): HTMLIFrameElement {
         let f = document.getElementById(IFRAME_RENDERER_ID) as HTMLIFrameElement;
         if (f) {
@@ -155,6 +159,7 @@ namespace pxt.docs {
             else return undefined;
         }
 
+        console.debug(`loading rendering iframe`);
         window.addEventListener("message", handleRendererMessage, false);
         f = document.createElement("iframe") as HTMLIFrameElement;
         f.id = IFRAME_RENDERER_ID;
@@ -192,11 +197,14 @@ namespace pxt.docs {
             }, "*");
         } else {
             // wait for iframe
+            console.debug(`job ${id} pending`);
             job.pending = true;
         }
     }
     function consumePendingQueue() {
         console.debug('consume rendering queue');
+        let f = document.getElementById(IFRAME_RENDERER_ID) as HTMLIFrameElement;
+        f.setAttribute("data-ready", "true");
         Object.keys(renderQueue).forEach(id => {
             const job = renderQueue[id];
             renderJob(job); // queue again which replaces the job in queue
@@ -230,22 +238,13 @@ namespace pxt.docs {
                     //snippet.parentNode.removeChild(snippet);
                 }
                 // all done?
-                consumeRenderQueueAsync();
+                consumeRenderQueue();
                 break;
         }
     }
 
-    let consumeRenderQueuePromise: Promise.Resolver<void>;
-    function consumeRenderQueueAsync(): Promise.Resolver<void> {
-        if (!consumeRenderQueuePromise)
-            consumeRenderQueuePromise = Promise.defer();
+    function consumeRenderQueue(): void {
         // nothing to do
-        if (!consumeRenderQueuePromise.promise.isResolved()
-            && (!document.getElementById(IFRAME_RENDERER_ID)
-                || !Object.keys(renderQueue).length)) {
-            consumeRenderQueuePromise.resolve();
-        }
-        return consumeRenderQueuePromise;
     }
 
     function renderNextSnippet(cls: string,
@@ -254,10 +253,8 @@ namespace pxt.docs {
         if (!cls) return;
 
         const $els = $("." + cls);
-        $els.each(function() {
+        $els.each(function () {
             const $el = $(this);
-            if (!options.emPixels) options.emPixels = 18;
-            if (!options.layout) options.layout = pxt.blocks.BlockLayout.Align;
             options.splitSvg = true;
 
             let id = $el.attr("id");
@@ -286,9 +283,9 @@ namespace pxt.docs {
             const js = $('<code class="lang-typescript highlight"/>').text(c.text().trim());
             if (options.snippetReplaceParent) c = c.parent();
             const compiled = r.compileJS && r.compileJS.success;
-            // TODO should this use pxt.outputName() and not pxtc.BINARY_HEX
-            const hex = compiled && r.compileJS.binary;
-            const hexname = `${appTarget.nickname || appTarget.id}-${options.hexName || ''}-${snippetCount++}${r.binaryExt}`;
+            const hex = compiled && r.compileJS.outfiles[r.compileJS.outputName];
+            // TODO
+            const hexname = r.compileJS.outputName; // `${appTarget.nickname || appTarget.id}-${options.hexName || ''}-${snippetCount++}${r.compileJS.outputName.slice('binary'.length)}`;
             fillWithWidget(options, c, js, s, r, {
                 showEdit: options.showEdit,
                 run: options.simulator && compiled,
@@ -464,7 +461,7 @@ namespace pxt.docs {
         */
     }
 
-    function renderProjectAsync(options: ClientRenderOptions): void {
+    function renderProject(options: ClientRenderOptions): void {
         /* TODO
         if (!options.projectClass) return;
 
@@ -631,8 +628,8 @@ namespace pxt.docs {
         */
     }
 
-    function fillCodeCardAsync(c: JQuery, cards: pxt.CodeCard[], options: pxt.docs.codeCard.CodeCardRenderOptions): Promise<void> {
-        if (!cards || cards.length == 0) return Promise.resolve();
+    function fillCodeCard(c: JQuery, cards: pxt.CodeCard[], options: pxt.docs.codeCard.CodeCardRenderOptions): void {
+        if (!cards || cards.length == 0) return;
 
         if (cards.length == 0) {
             let cc = pxt.docs.codeCard.render(cards[0], options)
@@ -663,39 +660,28 @@ namespace pxt.docs {
             });
             c.replaceWith(cd);
         }
-
-        return Promise.resolve();
     }
 
-    function renderNextCodeCardAsync(cls: string, options: ClientRenderOptions): Promise<void> {
-        if (!cls) return Promise.resolve();
+    function renderCodeCard(cls: string, options: ClientRenderOptions): void {
+        if (!cls) return;
 
-        let $el = $("." + cls).first();
-        if (!$el[0]) return Promise.resolve();
+        const $els = $("." + cls);
+        $els.each(function () {
+            let $el = $(this);
+            $el.removeClass(cls);
+            let cards: pxt.CodeCard[];
+            try {
+                let js: any = JSON.parse($el.text());
+                if (!Array.isArray(js)) js = [js];
+                cards = js as pxt.CodeCard[];
+            } catch (e) {
+                pxt.reportException(e);
+                $el.append($('<div/>').addClass("ui segment warning").text(e.messageText));
+            }
 
-        $el.removeClass(cls);
-        let cards: pxt.CodeCard[];
-        try {
-            let js: any = JSON.parse($el.text());
-            if (!Array.isArray(js)) js = [js];
-            cards = js as pxt.CodeCard[];
-        } catch (e) {
-            pxt.reportException(e);
-            $el.append($('<div/>').addClass("ui segment warning").text(e.messageText));
-        }
-
-        if (options.snippetReplaceParent) $el = $el.parent();
-        return fillCodeCardAsync($el, cards, { hideHeader: true })
-            .then(() => Promise.delay(1, renderNextCodeCardAsync(cls, options)));
-    }
-
-    function getRunUrl(options: ClientRenderOptions): string {
-        return options.pxtUrl ? options.pxtUrl + '/--run' : pxt.webConfig && pxt.webConfig.runUrl ? pxt.webConfig.runUrl : '/--run';
-    }
-
-    function getEditUrl(options: ClientRenderOptions): string {
-        const url = options.pxtUrl || pxt.appTarget.appTheme.homeUrl;
-        return (url || "").replace(/\/$/, '');
+            if (options.snippetReplaceParent) $el = $el.parent();
+            fillCodeCard($el, cards, { hideHeader: true });
+        })
     }
 
     function mergeConfig(options: ClientRenderOptions) {
@@ -722,10 +708,11 @@ namespace pxt.docs {
         }
 
         function render(e: Node, ignored: boolean) {
-            if (typeof hljs !== "undefined") {
-                $(e).text($(e).text().replace(/^\s*\r?\n/, ''))
-                hljs.highlightBlock(e)
-            }
+            // TODO
+            //if (typeof hljs !== "undefined") {
+            //    $(e).text($(e).text().replace(/^\s*\r?\n/, ''))
+            //    hljs.highlightBlock(e)
+            //}
             const opts = ts.pxtc.Util.clone(woptions);
             if (ignored) {
                 opts.run = false;
@@ -764,13 +751,15 @@ namespace pxt.docs {
         });
     }
 
-    export function renderAsync(options?: ClientRenderOptions): Promise<void> {
+    export function render(options?: ClientRenderOptions): void {
         pxt.analytics.enable();
         if (!options) options = {}
         if (options.pxtUrl) options.pxtUrl = options.pxtUrl.replace(/\/$/, '');
-        if (options.showEdit) options.showEdit = !pxt.BrowserUtils.isIFrame();
+        // TODO
+        //if (options.showEdit) options.showEdit = !pxt.BrowserUtils.isIFrame();
 
         mergeConfig(options);
+        /* TODO
         if (options.simulatorClass) {
             // simulators
             $('.' + options.simulatorClass).each((i, c) => {
@@ -787,9 +776,10 @@ namespace pxt.docs {
                 $c.replaceWith($sim);
             });
         }
+        */
 
         renderTypeScript(options);
-        renderNextCodeCardAsync(options.codeCardClass, options)
+        renderCodeCard(options.codeCardClass, options)
         renderNamespaces(options);
         renderInlineBlocks(options);
         renderLinks(options, options.linksClass, options.snippetReplaceParent, false);
@@ -798,8 +788,7 @@ namespace pxt.docs {
         renderSnippets(options);
         renderBlocks(options);
         renderBlocksXml(options);
-        renderProjectAsync(options);
-
-        return consumeRenderQueueAsync().promise;
+        renderProject(options);
+        consumeRenderQueue();
     }
 }

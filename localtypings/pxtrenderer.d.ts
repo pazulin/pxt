@@ -27,8 +27,7 @@ declare namespace pxt.runner {
 
     interface RenderCompilationResult {
         success: boolean;
-        binary?: string; // hex or uf2 file
-        binaryExt?: string; // .hex, .uf2
+        outputName: string; // binary.hex, binary.uf2, ... file
         outfiles: pxt.Map<string>;
     }
 

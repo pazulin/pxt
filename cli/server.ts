@@ -1057,7 +1057,7 @@ export function serveAsync(options: ServeOptions) {
             if (m) pathname = m[2];
             const md = readMd(pathname);
             const mdopts = <pxt.docs.RenderOptions>{
-                template: expandDocFileTemplate("docs.html"),
+                template: expandDocFileTemplate(pxt.appTarget.appTheme.docsSlim ? "docs-slim.html" : "docs.html"),
                 markdown: md,
                 theme: pxt.appTarget.appTheme,
                 filepath: pathname,

@@ -395,12 +395,11 @@ namespace pxt.runner {
         let jobPromise: Promise<void> = undefined;
 
         function toCompileResult(c: pxtc.CompileResult): pxt.runner.RenderCompilationResult {
-            if (!c) return c;
+            if (!c) return undefined;
             return {
                 success: c.success,
                 outfiles: c.outfiles,
-                binary: c.outfiles[pxt.outputName()],
-                binaryExt: pxt.outputName().replace(/^.\./, ".")
+                outputName: pxt.outputName()
             }
         }
 

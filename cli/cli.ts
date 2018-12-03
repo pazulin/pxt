@@ -2191,7 +2191,7 @@ function renderDocs(builtPackaged: string, localDir: string) {
         nodeutil.cpR("docfiles", dst + "/docfiles")
 
     let webpath = localDir
-    let docsTemplate = server.expandDocFileTemplate("docs.html")
+    let docsTemplate = server.expandDocFileTemplate(pxt.appTarget.appTheme.docsSlim ? "docs-slim.html" : "docs.html")
     docsTemplate = U.replaceAll(docsTemplate, "/cdn/", webpath)
     docsTemplate = U.replaceAll(docsTemplate, "/doccdn/", webpath)
     docsTemplate = U.replaceAll(docsTemplate, "/docfiles/", webpath + "docfiles/")
@@ -4640,7 +4640,7 @@ function internalCheckDocsAsync(compileSnippets?: boolean, re?: string, fix?: bo
     if (!nodeutil.existsDirSync("docs"))
         return Promise.resolve();
     const docsRoot = nodeutil.targetDir;
-    const docsTemplate = server.expandDocFileTemplate("docs.html")
+    const docsTemplate = server.expandDocFileTemplate(pxt.appTarget.appTheme.docsSlim ? "docs-slim.html" : "docs.html")
     pxt.log(`checking docs`);
 
     const noTOCs: string[] = [];

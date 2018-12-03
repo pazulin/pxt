@@ -121,10 +121,6 @@ namespace ts.pxtc.Util {
         return r
     }
 
-    function isKV(v: any) {
-        return !!v && typeof v === "object" && !Array.isArray(v)
-    }
-
     export function memcpy(trg: Uint8Array, trgOff: number, src: ArrayLike<number>, srcOff?: number, len?: number) {
         if (srcOff === void 0)
             srcOff = 0
@@ -145,59 +141,6 @@ namespace ts.pxtc.Util {
         }
         return r
     }
-
-    export function jsonMergeFrom(trg: any, src: any) {
-        if (!src) return;
-        Object.keys(src).forEach(k => {
-            if (isKV(trg[k]) && isKV(src[k]))
-                jsonMergeFrom(trg[k], src[k]);
-            else trg[k] = clone(src[k]);
-        });
-    }
-
-    export function jsonCopyFrom<T>(trg: T, src: T) {
-        let v = clone(src)
-        for (let k of Object.keys(src)) {
-            (trg as any)[k] = (v as any)[k]
-        }
-    }
-
-    // { a: { b: 1 }, c: 2} => { "a.b": 1, c: 2 }
-    export function jsonFlatten(v: any) {
-        let res: pxt.Map<any> = {}
-        let loop = (pref: string, v: any) => {
-            if (v !== null && typeof v == "object") {
-                assert(!Array.isArray(v))
-                if (pref) pref += "."
-                for (let k of Object.keys(v)) {
-                    loop(pref + k, v[k])
-                }
-            } else {
-                res[pref] = v
-            }
-        }
-        loop("", v)
-        return res
-    }
-
-    export function jsonUnFlatten(v: pxt.Map<any>) {
-        let res: any = {}
-        for (let k of Object.keys(v)) {
-            let ptr = res
-            let parts = k.split(".")
-            for (let i = 0; i < parts.length; ++i) {
-                let part = parts[i]
-                if (i == parts.length - 1)
-                    ptr[part] = v[k]
-                else {
-                    if (typeof ptr[part] != "object") ptr[part] = {}
-                    ptr = ptr[part]
-                }
-            }
-        }
-        return res
-    }
-
     export function strcmp(a: string, b: string) {
         if (a == b) return 0;
         if (a < b) return -1;
