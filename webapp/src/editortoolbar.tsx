@@ -22,6 +22,7 @@ export class EditorToolbar extends data.Component<ISettingsProps, {}> {
         this.toggleTrace = this.toggleTrace.bind(this);
         this.toggleDebugging = this.toggleDebugging.bind(this);
         this.toggleCollapse = this.toggleCollapse.bind(this);
+        this.overlaySimulator = this.overlaySimulator.bind(this);
     }
 
     saveProjectName(name: string, view?: string) {
@@ -84,6 +85,11 @@ export class EditorToolbar extends data.Component<ISettingsProps, {}> {
         this.props.parent.toggleSimulatorCollapse();
     }
 
+    overlaySimulator(view?: string) {
+        pxt.tickEvent("editortools.overlay", { view: view, collapsedTo: '' + !this.props.parent.state.collapseEditorTools }, { interactiveConsent: true });
+        this.props.parent.toggleSimulatorOverlay();
+    }
+
     private getCollapsedState(): string {
         return '' + this.props.parent.state.collapseEditorTools;
     }
@@ -120,6 +126,7 @@ export class EditorToolbar extends data.Component<ISettingsProps, {}> {
         const restartTooltip = lf("Restart the simulator");
         const collapseTooltip = collapsed ? lf("Show the simulator") : lf("Hide the simulator");
         const pairingButton = !!targetTheme.pairingButton;
+        const collapsedTablet = true;
 
         const hasUndo = this.props.parent.editor.hasUndo();
         const hasRedo = this.props.parent.editor.hasRedo();
@@ -159,7 +166,8 @@ export class EditorToolbar extends data.Component<ISettingsProps, {}> {
                     <div className="ui grid">
                         {!targetTheme.bigRunButton ? <div className="left aligned column six wide">
                             <div className="ui icon small buttons">
-                                {showCollapsed ? <EditorToolbarButton icon={`${collapsed ? 'toggle up' : 'toggle down'}`} className={`collapse-button ${collapsed ? 'collapsed' : ''} ${hideEditorFloats ? 'disabled' : ''}`} ariaLabel={lf("{0}, {1}", collapseTooltip, hideEditorFloats ? lf("Disabled") : "")} title={collapseTooltip} onButtonClick={this.toggleCollapse} view='mobile' /> : undefined}
+                                {!collapsedTablet && showCollapsed ? <EditorToolbarButton icon={`${collapsed ? 'toggle up' : 'toggle down'}`} className={`collapse-button ${collapsed ? 'collapsed' : ''} ${hideEditorFloats ? 'disabled' : ''}`} ariaLabel={lf("{0}, {1}", collapseTooltip, hideEditorFloats ? lf("Disabled") : "")} title={collapseTooltip} onButtonClick={this.toggleCollapse} view='mobile' /> : undefined}
+                                {collapsedTablet ? <EditorToolbarButton icon={`play`} className={`full-screen-button`} ariaLabel={runTooltip} title={runTooltip} onButtonClick={this.overlaySimulator} view='mobile' /> : undefined}
                                 {headless && run ? <EditorToolbarButton className={`play-button ${running ? "stop" : "play"}`} key='runmenubtn' disabled={starting} icon={running ? "stop" : "play"} title={runTooltip} onButtonClick={this.startStopSimulator} view='mobile' /> : undefined}
                                 {headless && restart ? <EditorToolbarButton key='restartbtn' className={`restart-button`} icon="refresh" title={restartTooltip} onButtonClick={this.restartSimulator} view='mobile' /> : undefined}
                                 {headless && trace ? <EditorToolbarButton key='tracebtn' className={`trace-button ${tracing ? 'orange' : ''}`} icon="xicon turtle" title={traceTooltip} onButtonClick={this.toggleTrace} view='mobile' /> : undefined}
@@ -223,7 +231,7 @@ export class EditorToolbar extends data.Component<ISettingsProps, {}> {
                     </div>}
             </div>
             <div className="column tablet only">
-                {collapsed ?
+                {collapsed || collapsedTablet ?
                     <div className="ui grid seven column">
                         {headless ?
                             <div className="left aligned six wide column">
@@ -238,7 +246,8 @@ export class EditorToolbar extends data.Component<ISettingsProps, {}> {
                             </div> :
                             <div className="left aligned six wide column">
                                 <div className="ui icon buttons">
-                                    {showCollapsed ? <EditorToolbarButton icon={`${collapsed ? 'toggle up' : 'toggle down'}`} className={`collapse-button ${collapsed ? 'collapsed' : ''} ${hideEditorFloats ? 'disabled' : ''}`} ariaLabel={lf("{0}, {1}", collapseTooltip, hideEditorFloats ? lf("Disabled") : "")} title={collapseTooltip} onButtonClick={this.toggleCollapse} view='tablet' /> : undefined}
+                                    {!collapsedTablet && showCollapsed ? <EditorToolbarButton icon={`${collapsed ? 'toggle up' : 'toggle down'}`} className={`collapse-button ${collapsed ? 'collapsed' : ''} ${hideEditorFloats ? 'disabled' : ''}`} ariaLabel={lf("{0}, {1}", collapseTooltip, hideEditorFloats ? lf("Disabled") : "")} title={collapseTooltip} onButtonClick={this.toggleCollapse} view='tablet' /> : undefined}
+                                    {collapsedTablet ? <EditorToolbarButton icon={`fullscreen`} className={`full-screen-button`} ariaLabel={runTooltip} title={runTooltip} onButtonClick={this.overlaySimulator} view='tablet' /> : undefined}
                                     {compileBtn ? <EditorToolbarButton className={`primary download-button download-button-full ${downloadButtonClasses}`} icon={downloadIcon} text={downloadText} title={compileTooltip} onButtonClick={this.compile} view='tablet' /> : undefined}
                                 </div>
                             </div>}

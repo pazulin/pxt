@@ -330,7 +330,7 @@ namespace pxsim {
 
         private applyAspectRatioToFrame(frame: HTMLIFrameElement) {
             frame.parentElement.style.paddingBottom =
-            (100 / this.runOptions.aspectRatio) + "%";
+            (100 / this.runOptions.aspectRatio) + "% !important";
         }
 
         private cleanupFrames() {

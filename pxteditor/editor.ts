@@ -54,6 +54,7 @@ namespace pxt.editor {
         publishing?: boolean;
         hideEditorFloats?: boolean;
         collapseEditorTools?: boolean;
+        overlaySimulator?: boolean;
         showBlocks?: boolean;
         showParts?: boolean;
         fullscreen?: boolean;
@@ -197,6 +198,7 @@ namespace pxt.editor {
         collapseSimulator(): void;
         toggleSimulatorCollapse(): void;
         toggleSimulatorFullscreen(): void;
+        toggleSimulatorOverlay(): void;
         proxySimulatorMessage(content: string): void;
         toggleTrace(intervalSpeed?: number): void;
         setTrace(enabled: boolean, intervalSpeed?: number): void;

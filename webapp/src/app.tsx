@@ -130,7 +130,7 @@ export class ProjectView
             collapseEditorTools: simcfg.headless || (!isSandbox && pxt.BrowserUtils.isMobile()),
             highContrast: isHighContrast,
             simState: pxt.editor.SimState.Stopped,
-            autoRun: true // always start simulator by default
+            autoRun: true, // always start simulator by default,
         };
         if (!this.settings.editorFontSize) this.settings.editorFontSize = /mobile/i.test(navigator.userAgent) ? 15 : 19;
         if (!this.settings.fileHistory) this.settings.fileHistory = [];
@@ -1846,10 +1846,28 @@ export class ProjectView
             this.startStopSimulator();
 
         if (state.collapseEditorTools) {
+            this.startSimulator();
             this.expandSimulator();
         }
         else {
+            this.stopSimulator();
             this.collapseSimulator();
+        }
+    }
+
+    toggleSimulatorOverlay() {
+        const state = this.state;
+        if (state.simState == pxt.editor.SimState.Stopped && !state.overlaySimulator)
+            this.startStopSimulator();
+
+        if (state.overlaySimulator) {
+            simulator.driver.unloanSimulator();
+            this.stopSimulator();
+            this.setState({ overlaySimulator: false });
+        }
+        else {
+            this.startSimulator();
+            this.setState({ overlaySimulator: true });
         }
     }
 
@@ -2598,6 +2616,10 @@ export class ProjectView
         this.chooseHwDialog = c;
     }
 
+    private handleSimOverlayRef = (c: HTMLDivElement) => {
+        c.appendChild(simulator.driver.loanSimulator());
+    }
+
     ///////////////////////////////////////////////////////////
     ////////////             RENDER               /////////////
     ///////////////////////////////////////////////////////////
@@ -2618,6 +2640,7 @@ export class ProjectView
         const inEditor = !!this.state.header && !inHome;
         const { lightbox, greenScreen } = this.state;
         const simDebug = !!targetTheme.debugger;
+        const simOverlay = !!this.state.overlaySimulator;
 
         const { hideMenuBar, hideEditorToolbar, transparentEditorToolbar } = targetTheme;
         const isHeadless = simOpts && simOpts.headless;
@@ -2711,6 +2734,7 @@ export class ProjectView
                 {showEditorToolbar ? <div id="editortools" role="complementary" aria-label={lf("Editor toolbar")}>
                     <editortoolbar.EditorToolbar ref="editortools" parent={this} />
                 </div> : undefined}
+                {simOverlay ? <div id="editorssimoverlay" ref={this.handleSimOverlayRef} /> : undefined}
                 {sideDocs ? <container.SideDocs ref="sidedoc" parent={this} sideDocsCollapsed={this.state.sideDocsCollapsed} docsUrl={this.state.sideDocsLoadUrl} /> : undefined}
                 {sandbox ? undefined : <scriptsearch.ScriptSearch parent={this} ref={this.handleScriptSearchRef} />}
                 {sandbox ? undefined : <extensions.Extensions parent={this} ref={this.handleExtensionRef} />}
@@ -3255,6 +3279,7 @@ document.addEventListener("DOMContentLoaded", () => {
             render(); // this sets theEditor
             if (state)
                 theEditor.setState({ editorState: state });
+            theEditor.setState({ overlaySimulator: true })
             initSerial();
             initScreenshots();
             initHashchange();
