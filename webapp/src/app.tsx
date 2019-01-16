@@ -1501,7 +1501,9 @@ export class ProjectView
                 const opts: pxt.editor.ProjectCreationOptions = example;
                 if (prj) opts.prj = prj;
                 features = example.features;
-                if (loadBlocks) {
+                if ((loadBlocks
+                    || example.editor == pxt.BLOCKS_PROJECT_NAME)
+                    && example.editor != pxt.JAVASCRIPT_PROJECT_NAME) {
                     return this.createProjectAsync(opts)
                         .then(() => {
                             return compiler.getBlocksAsync()

@@ -9,6 +9,7 @@ namespace pxt.gallery {
         name: string;
         filesOverride: pxt.Map<string>;
         dependencies: pxt.Map<string>;
+        editor?: string;
         features?: string[];
     }
 
@@ -45,12 +46,16 @@ namespace pxt.gallery {
         const dependencies = parsePackagesFromMarkdown(md);
         const src = m[2];
         const features = parseFeaturesFromMarkdown(md);
+        const editor = /^blocks?%/.test(m[1])
+            ? pxt.BLOCKS_PROJECT_NAME
+            : /^typescript$/.test(m[1]) ? pxt.JAVASCRIPT_PROJECT_NAME : undefined;
         return {
             name,
             filesOverride: {
                 "main.blocks": `<xml xmlns="http://www.w3.org/1999/xhtml"></xml>`,
                 "main.ts": src
             },
+            editor,
             dependencies,
             features
         };
