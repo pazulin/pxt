@@ -297,27 +297,14 @@ declare interface GIFOptions {
     maxFrames?: number;
 }
 
-declare interface GIFFrameOptions {
-    delay?: number;
-}
 
-declare class GIF {
-    constructor(options: GIFOptions);
-
-    running: boolean;
-    on(ev: string, handler: any): void;
-    render(): void;
-    abort(): void;
-    addFrame(img: ImageData, opts?: GIFFrameOptions): void;
-    frames: any[];
-    freeWorkers: Worker[];
+function workerOpAsync(op: string, arg: pxtc.service.OpArg) {
+    return pxt.worker.getWorker(pxt.webConfig.workerjs).opAsync(op, arg)
 }
 
 export class GifEncoder {
-    private gif: GIF;
     private time: number;
     private cancellationToken: pxt.Util.CancellationToken;
-    private renderPromise: Promise<string>;
 
     constructor(private options: GIFOptions) {
         this.cancellationToken = new pxt.Util.CancellationToken();
@@ -325,13 +312,18 @@ export class GifEncoder {
             this.options.maxFrames = 64;
     }
 
-    start() {
+    start(width: number, height: number, maxLength: number) {
         pxt.debug(`gif: start encoder`)
-        this.gif = new GIF(this.options);
         this.time = -1;
         this.cancellationToken = new pxt.Util.CancellationToken();
         this.cancellationToken.startOperation();
-        this.renderPromise = undefined;
+        workerOpAsync("gifStart", {
+            gifOptions: <ts.pxtc.GifWriterOptions>{
+                width,
+                heigth,
+                maxLength
+            }
+        })
     }
 
     cancel() {

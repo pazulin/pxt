@@ -1501,6 +1501,23 @@ namespace ts.pxtc {
     }
 }
 
+namespace ts.pxtc.gif {
+
+    export interface GifOptions {
+        loop?: number;
+        palette?: number[];
+        background?: number;
+        delay?: number;
+        disposal?: number;
+        transparent?: number;
+    }
+    export interface GifWriterOptions extends GifOptions {
+        width: number;
+        height: number;
+        maxLength: number;
+    }
+}
+
 namespace ts.pxtc.service {
 
     export interface OpArg {
@@ -1512,6 +1529,8 @@ namespace ts.pxtc.service {
         format?: FormatOptions;
         blocks?: BlocksOptions;
         projectSearch?: ProjectSearchOptions;
+        gifOptions?: ts.pxtc.gif.GifOptions;
+        gifFrame?: Uint8ClampedArray;
     }
 
     export interface SearchOptions {

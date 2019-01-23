@@ -560,6 +560,7 @@ namespace ts.pxtc.service {
     let builtinItems: SearchInfo[];
     let blockDefinitions: pxt.Map<pxt.blocks.BlockDefinition>;
     let tbSubset: pxt.Map<boolean | string>;
+    let gifWriter: ts.pxtc.gif.GifWriter;
 
     function fileDiags(fn: string) {
         if (!/\.ts$/.test(fn))
@@ -844,6 +845,23 @@ namespace ts.pxtc.service {
         },
         projectSearchClear: () => {
             lastProjectFuse = undefined;
+        },
+        gifStart: v => {
+            gifWriter = new ts.pxtc.gif.GifWriter(v.gifOptions as ts.pxtc.gif.GifWriterOptions);
+            return true;
+        },
+        gifAddFrame: v => {
+            if (gifWriter) {
+                return gifWriter.addFrame(v.gifFrame, v.gifOptions);
+            } else return false;
+        },
+        gifEncode: () => {
+            if (gifWriter) {
+                const r = gifWriter.end();
+                gifWriter = undefined;
+                return r;
+            } else
+                return undefined;
         }
     }
 
