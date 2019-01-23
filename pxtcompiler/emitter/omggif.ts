@@ -128,6 +128,7 @@ namespace ts.pxtc.gif {
 
             if (this.ended === true) { --this.p; this.ended = false; }  // Un-end.
 
+            const lastp = this.p;
             // TODO(deanm): Bounds check x, y.  Do they need to be within the virtual
             // canvas width/height, I imagine?
             if (x < 0 || y < 0 || x > 65535 || y > 65535)
@@ -219,7 +220,12 @@ namespace ts.pxtc.gif {
             this.p = GifWriter.GifWriterOutputLZWCodeStream(
                 this.buf, this.p, min_code_size < 2 ? 2 : min_code_size, indexed_pixels);
 
-            return this.p < this.buf.length; // check if there's still place
+            if (this.p + "data:image/gif;base64,".length >= this.buf.length) { // out of space ?
+                // we're out space
+                this.p = lastp;
+                return false;
+            }
+            else return true;
         }
 
         end() {

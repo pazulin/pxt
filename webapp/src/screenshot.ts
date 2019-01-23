@@ -282,22 +282,6 @@ export function testBlobEncodeAsync(dataURL: string, sz = 10000) {
 }
 */
 
-declare interface GIFOptions {
-    repeat?: number;
-    quality?: number;
-    workers?: number;
-    workerScript?: string;
-    background?: string;
-    width?: number;
-    height?: number;
-    transparent?: string;
-    dither?: boolean;
-    debug?: boolean;
-
-    maxFrames?: number;
-}
-
-
 function workerOpAsync(op: string, arg: pxtc.service.OpArg) {
     return pxt.worker.getWorker(pxt.webConfig.workerjs).opAsync(op, arg)
 }
@@ -305,61 +289,44 @@ function workerOpAsync(op: string, arg: pxtc.service.OpArg) {
 export class GifEncoder {
     private time: number;
     private cancellationToken: pxt.Util.CancellationToken;
+    private renderPromise: Promise<string>;
 
-    constructor(private options: GIFOptions) {
+    constructor() {
         this.cancellationToken = new pxt.Util.CancellationToken();
-        if (!this.options.maxFrames)
-            this.options.maxFrames = 64;
     }
 
-    start(width: number, height: number, maxLength: number) {
+    startAsync(options: ts.pxtc.gif.GifWriterOptions) {
         pxt.debug(`gif: start encoder`)
         this.time = -1;
         this.cancellationToken = new pxt.Util.CancellationToken();
         this.cancellationToken.startOperation();
-        workerOpAsync("gifStart", {
-            gifOptions: <ts.pxtc.GifWriterOptions>{
-                width,
-                heigth,
-                maxLength
-            }
-        })
+        return workerOpAsync("gifStart", { gifOptions: options });
     }
 
-    cancel() {
+    cancelAsync() {
         pxt.debug(`gif: cancel`)
-        if (this.cancellationToken.isCancelled()) return;
+        if (this.cancellationToken.isCancelled()) return Promise.resolve();
         this.cancellationToken.cancel();
-        if (this.gif && this.gif.running) {
-            try {
-                this.gif.abort();
-            } catch (e) { }
-        }
-        this.clean();
+        return workerOpAsync("gifCancel", {});
     }
 
-    private clean() {
-        if (this.gif && this.gif.freeWorkers) {
-            this.gif.freeWorkers.forEach(w => w.terminate());
-            this.gif.freeWorkers = [];
-        }
-        this.gif = undefined;
-        this.time = -1;
-    }
-
-    addFrame(dataUri: ImageData, delay?: number): boolean {
+    addFrameAsync(dataUri: ImageData, delay?: number): Promise<boolean> {
         if (this.cancellationToken.isCancelled() || this.renderPromise)
-            return false;
+            return Promise.resolve(false);
         const t = pxt.Util.now();
         if (this.time < 0)
             this.time = t;
         if (delay === undefined)
             delay = t - this.time;
         pxt.debug(`gif: frame ${delay}ms`);
-        this.gif.addFrame(dataUri, { delay });
         this.time = t;
-
-        return this.gif.frames.length > this.options.maxFrames;
+        const gifOptions: ts.pxtc.gif.GifOptions = {
+            delay,
+        };
+        return workerOpAsync("gifAddFrame", {
+            gifFrame: dataUri.data,
+            gifOptions
+        }).then((success: boolean) => success);
     }
 
     renderAsync(): Promise<string> {
@@ -367,17 +334,10 @@ export class GifEncoder {
 
         pxt.debug(`gif: render`)
         if (!this.renderPromise)
-            this.renderPromise = this.renderGifAsync()
-                .then(blob => {
-                    this.cancellationToken.throwIfCancelled();
-                    return new Promise((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onload = () => resolve(<string>reader.result);
-                        reader.onerror = e => reject(e);
-                        reader.readAsDataURL(blob);
-                    });
+            this.renderPromise = workerOpAsync("gifEncode", {})
+                .then((dataUri: string) => {
+                    return dataUri;
                 })
-                .finally(() => this.clean())
                 .catch(e => {
                     pxt.debug(`rendering failed`)
                     pxt.debug(e);
@@ -385,29 +345,4 @@ export class GifEncoder {
                 });
         return this.renderPromise;
     }
-
-    private renderGifAsync(): Promise<Blob> {
-        this.cancellationToken.throwIfCancelled();
-        return new Promise((resolve, reject) => {
-            this.gif.on('finished', (blob: Blob) => {
-                resolve(blob);
-            });
-            this.gif.on('abort', () => {
-                pxt.debug(`gif: abort`)
-                resolve(undefined);
-            });
-            this.gif.render();
-        })
-    }
-}
-
-export function loadGifEncoderAsync(): Promise<GifEncoder> {
-    const options: GIFOptions = {
-        workers: 1,
-        quality: 4,
-        dither: false,
-        workerScript: pxt.webConfig.gifworkerjs
-    };
-    return pxt.BrowserUtils.loadScriptAsync("gifjs/gif.js")
-        .then(() => new GifEncoder(options));
 }

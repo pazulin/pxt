@@ -855,6 +855,9 @@ namespace ts.pxtc.service {
                 return gifWriter.addFrame(v.gifFrame, v.gifOptions);
             } else return false;
         },
+        gifCancel: () => {
+            gifWriter = undefined;
+        },
         gifEncode: () => {
             if (gifWriter) {
                 const r = gifWriter.end();

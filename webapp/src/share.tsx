@@ -20,7 +20,6 @@ export interface ShareEditorProps extends ISettingsProps {
 export enum ShareRecordingState {
     None,
     ScreenshotSnap,
-    GifLoading,
     GifRecording,
     GifRendering
 }
@@ -70,7 +69,7 @@ export class ShareEditor extends data.Component<ShareEditorProps, ShareEditorSta
 
     hide() {
         if (this._gifEncoder) {
-            this._gifEncoder.cancel();
+            this._gifEncoder.cancelAsync().done();
             this._gifEncoder = undefined;
         }
         if (this.loanedSimulator) {
@@ -133,8 +132,25 @@ export class ShareEditor extends data.Component<ShareEditorProps, ShareEditorSta
         }
 
         if (this.state.recordingState == ShareRecordingState.GifRecording) {
-            if (this._gifEncoder.addFrame(msg.data, msg.delay))
-                this.gifRender();
+            let p = Promise.resolve();
+            if (!this._gifEncoder) {
+                // TODO compute palette
+                const palette = pxt.appTarget.runtime.palette.map(s => parseInt(s.replace(/#/, ""), 16));
+                palette.shift();
+                this._gifEncoder = new screenshot.GifEncoder();
+                p = p.then(() => this._gifEncoder.startAsync({
+                    width: msg.data.width,
+                    height: msg.data.height,
+                    loop: 1,
+                    palette,
+                    maxLength: pxt.appTarget.appTheme.simScreenshotMaxUriLength
+                }));
+            }
+            p.then(() => this._gifEncoder.addFrameAsync(msg.data, msg.delay))
+                .done(added => {
+                    if (!added)
+                        this.gifRender();
+                })
         } else if (this.state.recordingState == ShareRecordingState.ScreenshotSnap) {
             // received a screenshot
             this.setState({ screenshotUri: pxt.BrowserUtils.imageDataToPNG(msg.data), recordingState: ShareRecordingState.None, recordError: undefined })
@@ -222,42 +238,17 @@ export class ShareEditor extends data.Component<ShareEditorProps, ShareEditorSta
         }
     }
 
-    private loadEncoderAsync(): Promise<screenshot.GifEncoder> {
-        if (this._gifEncoder) return Promise.resolve(this._gifEncoder);
-        return screenshot.loadGifEncoderAsync()
-            .then(encoder => this._gifEncoder = encoder);
-    }
-
     gifRecord() {
         pxt.tickEvent("share.gifrecord", { view: 'computer', collapsedTo: '' + !this.props.parent.state.collapseEditorTools }, { interactiveConsent: true });
 
         if (this.state.recordingState != ShareRecordingState.None) return;
 
-        this.setState({ recordingState: ShareRecordingState.GifLoading, screenshotUri: undefined },
-            () => this.loadEncoderAsync()
-                .then(encoder => {
-                    if (!encoder) {
-                        this.setState({
-                            recordingState: ShareRecordingState.None,
-                            recordError: lf("Oops, gif encoder could not load. Please try again.")
-                        });
-                    } else {
-                        encoder.start();
-                        this.setState({ recordingState: ShareRecordingState.GifRecording },
-                            () => simulator.driver.startRecording());
-                    }
-                })
-                .catch(e => {
-                    pxt.reportException(e);
-                    this.setState({
-                        recordingState: ShareRecordingState.None,
-                        recordError: lf("Oops, gif recording failed. Please try again.")
-                    });
-                    if (this._gifEncoder) {
-                        this._gifEncoder.cancel();
-                    }
-                })
-        );
+        this._gifEncoder = undefined;
+        this.setState({
+            recordingState: ShareRecordingState.GifRecording,
+            screenshotUri: undefined,
+            recordError: undefined
+        }, () => simulator.driver.startRecording());
     }
 
     gifRender() {
@@ -285,7 +276,7 @@ export class ShareEditor extends data.Component<ShareEditorProps, ShareEditorSta
                         this.setState({ recordingState: ShareRecordingState.None, screenshotUri: uri, recordError })
                         // give a breather to the browser to render the gif
                         Promise.delay(1000).then(() => this.props.parent.startSimulator());
-                    })
+                    }).finally(() => { this._gifEncoder = undefined })
             });
     }
 
@@ -390,8 +381,7 @@ export class ShareEditor extends data.Component<ShareEditorProps, ShareEditorSta
                     : lf("Start recording"));
         const gifRecordingClass = isGifRecording ? "glow" : "";
         const gifDisabled = false;
-        const gifLoading = recordingState == ShareRecordingState.GifLoading
-            || isGifRendering;
+        const gifLoading = isGifRendering;
         const screenshotMessage = recordError ? recordError
             : isGifRecording ? lf("Recording in progress...")
                 : isGifRendering ? lf("Rendering gif...")
