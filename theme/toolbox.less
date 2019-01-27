@@ -235,6 +235,27 @@ div.blocklyTreeIcon span {
     #blocklyTrashIcon {
         width: @blocklyRowWidthComputer;
     }
+    /* Hide blockly tree labels on mobile */
+    span.blocklyTreeLabel, div.blocklyTreeRow:hover span.blocklyTreeLabel, div.blocklyTreeRow.blocklyTreeSelected:hover span.blocklyTreeLabel {
+        display: none !important;
+    }
+    div.blocklyTreeRow {
+        padding-right: 0;
+        text-align: center;
+    }
+    div.blocklyTreeRoot div div div div div.blocklyTreeRow {
+        border-left-width: 8px !important;
+    }
+    /* Hide the blockly toolbox search */
+    #blocklySearchInput.ui.icon.input {
+        input {
+            padding-right: 0 !important;
+            padding-left: 0.2rem;
+        }
+        i.icon {
+            display: none;
+        }
+    }
 }
 
 /* Tablet */

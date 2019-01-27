@@ -212,9 +212,9 @@
 --------------------*/
 
 @blocklyRowWidthWide: 200px;
-@blocklyRowWidthComputer: 180px;
+@blocklyRowWidthComputer: 50px; // collapsed toolbox
 @blocklyRowWidthTablet: 150px;
-@blocklyRowWidthMobile: 50px;
+@blocklyRowWidthMobile: 50px; // collapsed toobox
 
 @blocklyRowHeightWide: 40px;
 @blocklyRowHeightComputer: 40px;
