@@ -441,6 +441,8 @@ switch (step) {
 
             write(`s.pc = ${lblId};`)
             if (procid.ifaceIndex != null) {
+                // TODO: emitIfaceCall
+                // TODO: checks
                 let isSet = false
                 if (procid.mapMethod) {
                     write(`if (${frameRef}.arg0.vtable === 42) {`)
@@ -468,9 +470,15 @@ switch (step) {
             } else if (procid.virtualIndex == -1) {
                 // lambda call
                 write(`setupLambda(${frameRef}, ${frameRef}.argL);`)
+                write(`r0 = ${frameRef}.argL;`)
+                emitInstanceOf(builtInClassNo(pxt.BuiltInType.RefAction), "validate")
             } else if (procid.virtualIndex != null) {
                 assert(procid.virtualIndex >= 0)
                 write(`pxsim.check(typeof ${frameRef}.arg0  != "number", "Can't access property of null/undefined.")`)
+                // if (!target.switches.skipClassCheck && !procid.isThis) {
+                //     let info = procid.classInfo
+                //     write(`if (!${checkSubtype(info)}) failedCast(r0);`)
+                // }
                 write(`${frameRef}.fn = ${frameRef}.arg0.vtable.methods[${procid.virtualIndex}];`)
             }
             write(`return actionCall(${frameRef})`)

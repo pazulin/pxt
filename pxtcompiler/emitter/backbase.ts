@@ -7,6 +7,9 @@ namespace ts.pxtc {
         immLimit: number;
     }
 
+    export function builtInClassNo(typeNo: pxt.BuiltInType): ClassInfo {
+        return { id: "builtin" + typeNo, classNo: typeNo, lastSubtypeNo: typeNo } as any
+    }
 
     export function asmStringLiteral(s: string) {
         let r = "\""
@@ -974,10 +977,6 @@ ${baseLabel}_nochk:
             this.write(`@dummystack ${-numPops}`)
         }
 
-        private builtInClassNo(typeNo: pxt.BuiltInType): ClassInfo {
-            return { id: "builtin" + typeNo, classNo: typeNo, lastSubtypeNo: typeNo } as any
-        }
-
         private emitRtCall(topExpr: ir.Expr, genCall: () => void = null) {
             let name: string = topExpr.data
 
@@ -1055,7 +1054,7 @@ ${baseLabel}_nochk:
                                 this.write(this.loadFromExprStack("r0", a.expr, off))
                                 if (a.conv.refTag) {
                                     if (!target.switches.skipClassCheck)
-                                        this.emitInstanceOf(this.builtInClassNo(a.conv.refTag), "validate")
+                                        this.emitInstanceOf(builtInClassNo(a.conv.refTag), "validate")
                                 } else {
                                     this.alignedCall(a.conv.method, "", off)
                                     if (a.conv.returnsRef)
@@ -1179,7 +1178,7 @@ ${baseLabel}_nochk:
                 `)
 
                 this.loadVTable(false, "r4")
-                this.checkSubtype(this.builtInClassNo(pxt.BuiltInType.RefMap), ".notmap", "r4")
+                this.checkSubtype(builtInClassNo(pxt.BuiltInType.RefMap), ".notmap", "r4")
 
                 this.write(this.t.callCPPPush(op == "set" ? "pxtrt::mapSetByString" : "pxtrt::mapGetByString"))
                 this.write(".notmap:")
@@ -1261,7 +1260,7 @@ ${baseLabel}_nochk:
 
             this.loadVTable(false, "r4")
 
-            let classNo = this.builtInClassNo(!isBuffer ?
+            let classNo = builtInClassNo(!isBuffer ?
                 pxt.BuiltInType.RefCollection : pxt.BuiltInType.BoxedBuffer)
             if (!target.switches.skipClassCheck)
                 this.checkSubtype(classNo, ".fail", "r4")
@@ -1354,7 +1353,7 @@ ${baseLabel}_nochk:
                 mov r6, r3
                 mov r7, r0`)
             // TODO should inline this?
-            this.emitInstanceOf(this.builtInClassNo(pxt.BuiltInType.RefAction), "validate")
+            this.emitInstanceOf(builtInClassNo(pxt.BuiltInType.RefAction), "validate")
             this.write(`
                 ${rfNo}mov r0, sp
                 push {r4, r5, r6, r7} ; push args and the lambda
@@ -1384,7 +1383,7 @@ ${baseLabel}_nochk:
             `)
 
             this.loadVTable()
-            this.checkSubtype(this.builtInClassNo(pxt.BuiltInType.BoxedString), ".notstring")
+            this.checkSubtype(builtInClassNo(pxt.BuiltInType.BoxedString), ".notstring")
 
             this.write(`
                 bx lr
@@ -1574,7 +1573,7 @@ ${baseLabel}_nochk:
             this.write("; lambda call")
             this.loadVTable()
             if (!target.switches.skipClassCheck)
-                this.checkSubtype(this.builtInClassNo(pxt.BuiltInType.RefAction))
+                this.checkSubtype(builtInClassNo(pxt.BuiltInType.RefAction))
             // the conditional branch below saves stack space for functions that do not require closure
             this.write(`
                 movs r4, #${numargs}

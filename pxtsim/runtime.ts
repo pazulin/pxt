@@ -903,11 +903,18 @@ namespace pxsim {
                 return v && v.vtable && low <= v.vtable.classNo && v.vtable.classNo <= high;
             }
 
+            function getTypeName(v:any) : string {
+                if (v.vtable) {
+                    return v.vtable.name;
+                }
+                return v;
+            }
+
             function failedCast(v: any) {
                 // TODO generate the right panic codes
                 if ((pxsim as any).control && (pxsim as any).control.dmesgValue)
                     (pxsim as any).control.dmesgValue(v)
-                oops("failed cast on " + v)
+                oops("failed cast from " + getTypeName(v))
             }
 
             function buildResume(s: StackFrame, retPC: number) {
