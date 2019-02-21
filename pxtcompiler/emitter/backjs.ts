@@ -347,6 +347,8 @@ switch (step) {
         function emitInstanceOf(info: ClassInfo, tp: string) {
             if (tp == "bool")
                 write(`r0 = ${checkSubtype(info)};`)
+            else if (tp == "lambda")
+                write(`if (!(r0 instanceof pxsim.RefAction)) failedCast(r0);`)
             else if (tp == "validate" || tp == "validateDecr") {
                 write(`if (!${checkSubtype(info)}) failedCast(r0);`)
             } else {
@@ -471,7 +473,7 @@ switch (step) {
                 // lambda call
                 write(`setupLambda(${frameRef}, ${frameRef}.argL);`)
                 write(`r0 = ${frameRef}.argL;`)
-                emitInstanceOf(builtInClassNo(pxt.BuiltInType.RefAction), "validate")
+                emitInstanceOf(null, "lambda")
             } else if (procid.virtualIndex != null) {
                 assert(procid.virtualIndex >= 0)
                 write(`pxsim.check(typeof ${frameRef}.arg0  != "number", "Can't access property of null/undefined.")`)
