@@ -5264,6 +5264,38 @@ function testGithubPackagesAsync(parsed: commandParser.ParsedCommand): Promise<v
         });
 }
 
+function markdownToOneNoteAsync(parsed?: commandParser.ParsedCommand): Promise<void> {
+
+    const fp = parsed.args[0];
+    pxt.log(`markdown 2 OneNote: ${fp}`)
+    const token = parsed.flags["token"];
+
+    function processFileAsync(f: string) {
+        // try single file
+        const md = nodeutil.resolveMd(nodeutil.targetDir, fp);
+        if (!md) return Promise.resolve();
+
+        pxt.log(`converting ${f}`);
+        return pxt.docs.onenote.renderAsync(md)
+            .then(html => {
+                console.log(html);
+                // push to one note
+
+            })
+    }
+
+    // try resolving a summary
+    const summary = nodeutil.resolveMd(fp, "SUMMARY");
+    if (summary) {
+        // handle entire folder
+        const toc = pxt.docs.buildTOC(summary);
+    } else {
+        processFileAsync(fp);
+    }
+
+    return Promise.resolve();
+}
+
 interface BlockTestCase {
     packageName: string;
     testFiles: { testName: string, contents: string }[];
@@ -5837,6 +5869,16 @@ PXT_ASMDEBUG     - embed additional information in generated binary.asm file
             debug: { description: "Keeps the browser open to debug tests" }
         }
     }, blockTestsAsync);
+
+    p.defineCommand({
+        name: "md2onenote",
+        help: "Export Markdown docs to OneNote",
+        advanced: true,
+        argString: "<folder>",
+        flags: {
+            token: { description: "Bearer token" }
+        }
+    }, markdownToOneNoteAsync);
 
 
     function simpleCmd(name: string, help: string, callback: (c?: commandParser.ParsedCommand) => Promise<void>, argString?: string, onlineHelp?: boolean): void {

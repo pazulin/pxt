@@ -360,9 +360,10 @@ namespace pxt.docs {
         repo?: { name: string; fullName: string; tag?: string };
         throwOnError?: boolean; // check for missing macros
         TOC?: TOCMenuEntry[]; // TOC parsed here
+        onenote?: boolean; // generate OneNote compatible HTML
     }
 
-    export function setupRenderer(renderer: marked.Renderer) {
+    export function setupRenderer(renderer: marked.Renderer, opts?: RenderOptions) {
         renderer.image = function (href: string, title: string, text: string) {
             let out = '<img class="ui centered image" src="' + href + '" alt="' + text + '"';
             if (title) {
@@ -390,6 +391,14 @@ namespace pxt.docs {
                 text = text.replace(/@(fullscreen|unplugged)/g, '');
             return `<h${level} id="${(this as any).options.headerPrefix}${id}">${text}</h${level}>`
         }
+        const linkRenderer = renderer.link;
+        renderer.link = function (href: string, title: string, text: string) {
+            const relative = new RegExp('^[/#]').test(href);
+            const target = !relative ? '_blank' : '';
+            if (relative && opts && opts.versionPath) href = `/${opts.versionPath}${href}`;
+            const html = linkRenderer.call(renderer, href, title, text);
+            return html.replace(/^<a /, `<a ${target ? `target="${target}"` : ''} rel="nofollow noopener" `);
+        };
     }
 
     export function renderMarkdown(opts: RenderOptions): string {
@@ -442,7 +451,7 @@ namespace pxt.docs {
         if (opts.locale)
             template = translate(template, opts.locale).text
 
-        let d: RenderData = {
+        const d: RenderData = {
             html: template,
             theme: opts.theme,
             filepath: opts.filepath,
@@ -458,16 +467,8 @@ namespace pxt.docs {
         }
 
         // We have to re-create the renderer every time to avoid the link() function's closure capturing the opts
-        let renderer = new markedInstance.Renderer()
-        setupRenderer(renderer);
-        const linkRenderer = renderer.link;
-        renderer.link = function (href: string, title: string, text: string) {
-            const relative = new RegExp('^[/#]').test(href);
-            const target = !relative ? '_blank' : '';
-            if (relative && d.versionPath) href = `/${d.versionPath}${href}`;
-            const html = linkRenderer.call(renderer, href, title, text);
-            return html.replace(/^<a /, `<a ${target ? `target="${target}"` : ''} rel="nofollow noopener" `);
-        };
+        const renderer = new markedInstance.Renderer()
+        setupRenderer(renderer, opts);
         markedInstance.setOptions({
             renderer: renderer,
             gfm: true,
