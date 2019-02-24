@@ -15,7 +15,7 @@ namespace pxt.docs {
 
     const stdSetting = "<!-- @CMD@ @ARGS@ -->"
 
-    let stdsettings: Map<string> = {
+    const stdsettings: Map<string> = {
         "parent": stdSetting,
         "short": stdSetting,
         "description": "<!-- desc -->"
@@ -115,21 +115,21 @@ namespace pxt.docs {
         `<div class='ui negative message'>${htmlQuote(s)}</div>`
 
     export function prepTemplate(d: RenderData) {
-        let boxes = U.clone(stdboxes)
-        let macros = U.clone(stdmacros)
-        let settings = U.clone(stdsettings)
-        let menus: Map<string> = {}
-        let toc: Map<string> = {}
-        let params = d.params
-        let theme = d.theme
+        const boxes = U.clone(stdboxes)
+        const macros = U.clone(stdmacros)
+        const settings = U.clone(stdsettings)
+        const menus: Map<string> = {}
+        const toc: Map<string> = {}
+        const params = d.params
+        const theme = d.theme
 
         d.boxes = boxes
         d.macros = macros
         d.settings = settings
 
         d.html = d.html.replace(/<aside\s+([^<>]+)>([^]*?)<\/aside>/g, (full, attrsStr, body) => {
-            let attrs = parseHtmlAttrs(attrsStr)
-            let name = attrs["data-name"] || attrs["id"]
+            const attrs = parseHtmlAttrs(attrsStr)
+            const name = attrs["data-name"] || attrs["id"]
 
             if (!name)
                 return error("id or data-name missing on macro")
@@ -149,9 +149,9 @@ namespace pxt.docs {
             return `<!-- macro ${name} -->`
         })
 
-        let recMenu = (m: DocMenuEntry, lev: number) => {
+        const recMenu = (m: DocMenuEntry, lev: number) => {
             let templ = menus["item"]
-            let mparams: Map<string> = {
+            const mparams: Map<string> = {
                 NAME: m.name,
             }
             if (m.subitems) {
@@ -169,7 +169,7 @@ namespace pxt.docs {
             return injectHtml(templ, mparams, ["ITEMS"])
         }
 
-        let breadcrumb: BreadcrumbEntry[] = [{
+        const breadcrumb: BreadcrumbEntry[] = [{
             name: lf("Docs"),
             href: "/docs"
         }]
@@ -191,8 +191,7 @@ namespace pxt.docs {
         };
         TOC.forEach(isCurrentTOC)
 
-        let currentTocEntry: TOCMenuEntry;
-        let recTOC = (m: TOCMenuEntry, lev: number) => {
+        const recTOC = (m: TOCMenuEntry, lev: number) => {
             let templ = toc["item"]
             let mparams: Map<string> = {
                 NAME: m.name,
@@ -204,7 +203,6 @@ namespace pxt.docs {
             if (tocPath.indexOf(m) >= 0) {
                 mparams["ACTIVE"] = 'active';
                 mparams["EXPANDED"] = 'true';
-                currentTocEntry = m;
                 breadcrumb.push({
                     name: m.name,
                     href: m.path
@@ -315,8 +313,8 @@ namespace pxt.docs {
         params["targetstyle"] = style;
         params["tocclass"] = theme.lightToc ? "lighttoc" : "inverted";
 
-        for (let k of Object.keys(theme)) {
-            let v = (theme as any)[k]
+        for (const k of Object.keys(theme)) {
+            const v = (theme as any)[k]
             if (params[k] === undefined && typeof v == "string")
                 params[k] = v
         }
@@ -603,7 +601,7 @@ ${opts.repo.name.replace(/^pxt-/, '')}=github:${opts.repo.fullName}#${opts.repo.
 
         html = ""
 
-        for (let k of Object.keys(registers)) {
+        for (const k of Object.keys(registers)) {
             html += injectBody(k + "-container", registers[k])
         }
 

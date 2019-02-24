@@ -2,6 +2,29 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
+			"name": "onenote",
+			"type": "node",
+			"request": "launch",
+			"program": "${workspaceRoot}/built/pxt.js",
+			"stopOnEntry": false,
+			"args": [
+				"exportonenote",
+				"about",
+				"--dbg"
+			],
+			"cwd": "${workspaceRoot}/../pxt-microbit",
+			"runtimeExecutable": null,
+			"runtimeArgs": [
+				"--nolazy"
+			],
+			"env": {
+				"NODE_ENV": "development"
+			},
+			"console": "integratedTerminal",
+			"sourceMaps": false,
+			"outFiles": []
+		},
+		{
 			"name": "checkdocs",
 			"type": "node",
 			"request": "launch",
@@ -9,7 +32,7 @@
 			"stopOnEntry": false,
 			"args": [
 				"checkdocs",
-				"--re", 
+				"--re",
 				"turtle-spiral",
 				"--dbg"
 			],
@@ -74,7 +97,8 @@
 			"program": "${workspaceRoot}/built/pxt.js",
 			"stopOnEntry": false,
 			"args": [
-				"buildsprites", "space"
+				"buildsprites",
+				"space"
 			],
 			"cwd": "${workspaceRoot}/../pxt-32/libs/device",
 			"runtimeExecutable": null,

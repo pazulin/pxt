@@ -5269,6 +5269,8 @@ function markdownToOneNoteAsync(parsed?: commandParser.ParsedCommand): Promise<v
     const fp = parsed.args[0];
     pxt.log(`markdown 2 OneNote: ${fp}`)
     const token = parsed.flags["token"];
+    const template = server.expandDocFileTemplate("onenote.html")
+    console.log(`template: ${template}`)
 
     function processFileAsync(f: string) {
         // try single file
@@ -5276,7 +5278,7 @@ function markdownToOneNoteAsync(parsed?: commandParser.ParsedCommand): Promise<v
         if (!md) return Promise.resolve();
 
         pxt.log(`converting ${f}`);
-        return pxt.docs.onenote.renderAsync(md)
+        return pxt.onenote.renderAsync(template, md)
             .then(html => {
                 console.log(html);
                 // push to one note
@@ -5285,7 +5287,7 @@ function markdownToOneNoteAsync(parsed?: commandParser.ParsedCommand): Promise<v
     }
 
     // try resolving a summary
-    const summary = nodeutil.resolveMd(fp, "SUMMARY");
+    const summary = nodeutil.resolveMd(nodeutil.targetDir, path.join(fp, "SUMMARY"));
     if (summary) {
         // handle entire folder
         const toc = pxt.docs.buildTOC(summary);
@@ -5871,7 +5873,7 @@ PXT_ASMDEBUG     - embed additional information in generated binary.asm file
     }, blockTestsAsync);
 
     p.defineCommand({
-        name: "md2onenote",
+        name: "exportonenote",
         help: "Export Markdown docs to OneNote",
         advanced: true,
         argString: "<folder>",
