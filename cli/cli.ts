@@ -5289,8 +5289,11 @@ function markdownToOneNoteAsync(parsed?: commandParser.ParsedCommand): Promise<v
     // try resolving a summary
     const summary = nodeutil.resolveMd(nodeutil.targetDir, path.join(fp, "SUMMARY"));
     if (summary) {
-        // handle entire folder
+        // handle entire book
         const toc = pxt.docs.buildTOC(summary);
+        pxt.docs.visitTOC(toc, (entry) => {
+            processFileAsync(entry.path);
+        })
     } else {
         processFileAsync(fp);
     }
