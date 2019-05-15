@@ -1,10 +1,12 @@
 namespace pxt.editor {
     export interface DataStreams<T> {
         console?: T;
+        jacdac?: T;
     }
 
     export interface Permissions<T> {
         console?: T;
+        jacdac?: T;
         readUserCode?: T;
     }
 
@@ -78,6 +80,16 @@ namespace pxt.editor {
             source: string;
             sim: boolean;
             data: string;
+        }
+    }
+
+    /**
+     * Event fired when a JACDAC packet is received
+     */
+    export interface JDEvent extends ExtensionEvent {
+        event: "extjacdac";
+        body: {
+            packet: Uint8Array;
         }
     }
 
