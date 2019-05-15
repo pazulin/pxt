@@ -3,7 +3,8 @@ import * as pkg from "./package";
 
 export enum Permissions {
     Console,
-    ReadUserCode
+    ReadUserCode,
+    JACDAC
 }
 
 export enum PermissionStatus {

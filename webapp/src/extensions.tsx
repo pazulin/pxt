@@ -241,9 +241,11 @@ export class Extensions extends data.Component<ISettingsProps, ExtensionsState> 
     getIconForPermission(permission: ext.Permissions) {
         switch (permission) {
             case ext.Permissions.Console:
-                return "terminal"
+                return "terminal";
             case ext.Permissions.ReadUserCode:
                 return "code";
+            case ext.Permissions.JACDAC:
+                return "";
         }
         return "";
     }
@@ -254,6 +256,8 @@ export class Extensions extends data.Component<ISettingsProps, ExtensionsState> 
                 return lf("Console output")
             case ext.Permissions.ReadUserCode:
                 return lf("Read your code");
+            case ext.Permissions.JACDAC:
+                return lf("Read JACDAC packets");
         }
         return "";
     }
@@ -264,6 +268,8 @@ export class Extensions extends data.Component<ISettingsProps, ExtensionsState> 
                 return lf("The extension will be able to read any console output (including device data) streamed to the editor")
             case ext.Permissions.ReadUserCode:
                 return lf("The extension will be able to read the code in the current project");
+                case ext.Permissions.JACDAC:
+                return lf("The extension will be able to read JACDAC packets");
         }
         return "";
     }
