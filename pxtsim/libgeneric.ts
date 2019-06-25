@@ -333,6 +333,21 @@ namespace pxsim {
 
         export function substring(s: string, i: number, j: number) {
             pxtrt.nullCheck(s)
+            // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/substring
+            // ignore out of bounds
+            i = Math.max(0, Math.min(s.length, i));
+            // optional end
+            if (j === undefined) {
+                j = s.length - i;
+            }
+            // normalize
+            j = Math.max(0, Math.min(s.length, j));
+            // swap if needed
+            if (i > j) {
+                const temp = j;
+                j = i;
+                i = temp;
+            }
             return initString(s.slice(i, i + j));
         }
 

@@ -250,6 +250,16 @@ declare interface String {
     substr(start: number, length?: number): string;
 
     /**
+     * Return a substring of the current string between two indices.
+     * @param start The index of the first character to include in the returned substring.
+     * @param end Optional. The index of the first character to exclude from the returned substring.
+     */
+    //% shim=String_::substring length.defl=10
+    //% help=text/substring
+    //% blockId="string_substr" block="substring of %this=text|from %start|to %end" blockNamespace="text"
+    substring(start: number, end?: number): string;
+
+    /**
      * Return a substring of the current string.
      * @param start first character index; can be negative from counting from the end, eg:0
      * @param end one-past-last character index
